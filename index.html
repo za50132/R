@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="處方葉 LEAF&LEAD — 商家店面一頁式官網 · 業務團媽個人形象頁，年費 $9,900 起，讓您被看見。" />
+  <meta property="og:title" content="處方葉 LEAF&LEAD｜您的數位代言人" />
+  <meta property="og:description" content="商家店面、個人業務、團媽，我們為每一種人打造專屬的數位形象。" />
+  <meta property="og:type" content="website" />
+  <title>處方葉 LEAF&LEAD｜您的數位代言人</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== NAVIGATION ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo">
+        <img src="assets/logo.png" alt="處方葉 LEAF&amp;LEAD" class="logo-img" onerror="this.style.display='none'" />
+        <span class="logo-text-wrap">
+          <span class="logo-text">處方葉</span>
+          <span class="logo-sub">LEAF &amp; LEAD</span>
+        </span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="開啟選單">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#services" class="nav-link">服務流程</a></li>
+        <li><a href="#pricing" class="nav-link">定價</a></li>
+        <li><a href="#portfolio" class="nav-link">作品集</a></li>
+        <li><a href="#contact" class="nav-link">聯絡</a></li>
+        <li>
+          <a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-accent nav-cta">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.76 1.31 5.22 3.37 6.91L4.5 22l4.29-1.43C9.8 20.83 10.88 21 12 21c5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>
+            Line 立即諮詢
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ===== AUDIENCE SWITCHER (固定浮動，滾過 hero 後出現) ===== -->
+  <div class="audience-switcher" id="audienceSwitcher" aria-label="切換受眾">
+    <div class="aud-track">
+      <div class="aud-indicator" id="audIndicator"></div>
+      <button class="aud-btn active" data-aud="biz" id="audBiz">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M4 2h12a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2zm0 2v12h12V4H4zm2 2h8v2H6V6zm0 4h8v2H6v-2zm0 4h5v2H6v-2z"/></svg>
+        商家店面
+      </button>
+      <button class="aud-btn" data-aud="personal" id="audPersonal">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0H3z"/></svg>
+        個人形象
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SPLIT HERO ===== -->
+  <section class="hero-split" id="hero">
+
+    <!-- Left: 商家店面 -->
+    <div class="hero-panel panel-biz" id="panelBiz" role="button" tabindex="0" aria-label="我是商家或店面">
+      <div class="panel-bg-deco" aria-hidden="true">
+        <div class="pdeco-circle pc1"></div>
+        <div class="pdeco-circle pc2"></div>
+        <div class="pdeco-line pl1"></div>
+        <div class="pdeco-line pl2"></div>
+      </div>
+      <div class="panel-content">
+        <span class="panel-eyebrow">商家 · 店面 · 餐廳</span>
+        <h2 class="panel-title">
+          讓您的店面<br />
+          <em>在網路上說話</em>
+        </h2>
+        <p class="panel-desc">不懂網路沒關係，我們是您的數位代言人。一頁式官網，讓客人找得到您。</p>
+        <div class="panel-stat">
+          <strong>$9,900</strong><span>/ 年，月均不到 $825</span>
+        </div>
+        <div class="panel-cta">
+          <span class="btn btn-accent btn-lg panel-enter-btn">
+            了解商家方案
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3l7 7-7 7M3 10h14"/></svg>
+          </span>
+        </div>
+      </div>
+      <div class="panel-scroll-hint" aria-hidden="true">往下滑看詳情 ↓</div>
+    </div>
+
+    <!-- Divider -->
+    <div class="panel-divider" aria-hidden="true">
+      <div class="divider-logo">
+        <img src="assets/logo.png" alt="" onerror="this.style.display='none'" />
+        <span>OR</span>
+      </div>
+    </div>
+
+    <!-- Right: 個人形象 -->
+    <div class="hero-panel panel-personal" id="panelPersonal" role="button" tabindex="0" aria-label="我是業務或團媽">
+      <div class="panel-bg-deco" aria-hidden="true">
+        <div class="pdeco-circle pc3"></div>
+        <div class="pdeco-circle pc4"></div>
+        <div class="pdeco-line pl3"></div>
+      </div>
+      <div class="panel-content">
+        <span class="panel-eyebrow">業務 · 團媽 · 個人創業</span>
+        <h2 class="panel-title">
+          讓您的個人品牌<br />
+          <em>被世界看見</em>
+        </h2>
+        <p class="panel-desc">專屬個人形象頁，展示您的成功案例與服務，讓新客人秒建立信任。</p>
+        <div class="panel-stat">
+          <strong>$9,900</strong><span>/ 年，一頁打造個人 IP</span>
+        </div>
+        <div class="panel-cta">
+          <span class="btn btn-accent btn-lg panel-enter-btn panel-enter-personal">
+            了解個人方案
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3l7 7-7 7M3 10h14"/></svg>
+          </span>
+        </div>
+      </div>
+      <div class="panel-scroll-hint" aria-hidden="true">往下滑看詳情 ↓</div>
+    </div>
+
+  </section>
+
+  <!-- ===================================================
+       BIZ SECTIONS  (data-audience="biz")
+  ==================================================== -->
+
+  <!-- BIZ PAIN POINTS -->
+  <section class="pain-points section-padding" id="why" data-audience="biz">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">為什麼需要官網？</p>
+        <h2 class="section-title">現在的客人，都先上網找</h2>
+        <p class="section-desc">沒有網路存在感，就等於把客人送給競爭對手</p>
+      </div>
+      <div class="cards-grid">
+        <div class="pain-card reveal" data-delay="0">
+          <div class="pain-icon">
+            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="#1C1C1C" stroke-width="2"/><circle cx="22" cy="22" r="8" stroke="#C9A84C" stroke-width="2.5"/><line x1="28" y1="28" x2="36" y2="36" stroke="#C9A84C" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3>找不到您的店</h3>
+          <p>客人搜尋「附近的餐廳」，卻只找到競爭對手。沒有官網，您的店等於不存在。</p>
+          <div class="pain-solution">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="#C9A84C"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.7 6.2L7.4 10.5a.7.7 0 01-1 0L4.3 8.4a.7.7 0 011-1l1.6 1.6 3.8-3.8a.7.7 0 011 1z"/></svg>
+            一頁式官網，讓您在 Google 被找到
+          </div>
+        </div>
+        <div class="pain-card reveal" data-delay="1">
+          <div class="pain-icon">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="8" y="12" width="32" height="24" rx="3" stroke="#1C1C1C" stroke-width="2"/><line x1="8" y1="20" x2="40" y2="20" stroke="#C9A84C" stroke-width="2.5"/><circle cx="24" cy="30" r="4" stroke="#C9A84C" stroke-width="2.5"/></svg>
+          </div>
+          <h3>傳統網站太貴</h3>
+          <p>以前做個網站動輒數萬元，還要年年維護費，對小店家來說根本負擔不起。</p>
+          <div class="pain-solution">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="#C9A84C"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.7 6.2L7.4 10.5a.7.7 0 01-1 0L4.3 8.4a.7.7 0 011-1l1.6 1.6 3.8-3.8a.7.7 0 011 1z"/></svg>
+            年費只要 $9,900，含每月更新
+          </div>
+        </div>
+        <div class="pain-card reveal" data-delay="2">
+          <div class="pain-icon">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="14" y="8" width="20" height="32" rx="3" stroke="#1C1C1C" stroke-width="2"/><line x1="19" y1="36" x2="29" y2="36" stroke="#C9A84C" stroke-width="2.5" stroke-linecap="round"/><rect x="18" y="14" width="12" height="8" rx="2" stroke="#C9A84C" stroke-width="2"/></svg>
+          </div>
+          <h3>不懂怎麼弄</h3>
+          <p>建站、上傳資料、SEO 優化⋯這些對不熟網路的老闆來說，根本是另一個世界。</p>
+          <div class="pain-solution">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="#C9A84C"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.7 6.2L7.4 10.5a.7.7 0 01-1 0L4.3 8.4a.7.7 0 011-1l1.6 1.6 3.8-3.8a.7.7 0 011 1z"/></svg>
+            我們全程代勞，您只要說需求
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BIZ BENEFITS -->
+  <section class="benefits section-padding" id="benefits" data-audience="biz">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">由我們幫您處理！</p>
+        <h2 class="section-title">不用多花一分力氣</h2>
+        <p class="section-desc">您只要專心做好本業，數位的事情交給我們</p>
+      </div>
+      <div class="benefits-grid">
+        <div class="benefit-card reveal" data-delay="0">
+          <div class="benefit-icon">👥</div>
+          <div class="benefit-num">3<span>位</span></div>
+          <div class="benefit-label">可少請的員工</div>
+          <p class="benefit-desc">圖文、拍攝、社群、官網——這些原本要分配給員工的工作，我們一手包辦</p>
+        </div>
+        <div class="benefit-card benefit-card--accent reveal" data-delay="1">
+          <div class="benefit-icon">💰</div>
+          <div class="benefit-num">50<span>%</span></div>
+          <div class="benefit-label">省下宣傳費</div>
+          <p class="benefit-desc">比起傳統廣告投放與行銷外包，我們的年費方案讓您用最少預算取得最大曝光</p>
+        </div>
+        <div class="benefit-card reveal" data-delay="2">
+          <div class="benefit-icon">⚡</div>
+          <div class="benefit-num">80<span>%</span></div>
+          <div class="benefit-label">省下的精力</div>
+          <p class="benefit-desc">從建站、更新到維護全程服務，您不需要學任何技術，傳訊息給我們就好</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BIZ PRICING -->
+  <section class="pricing section-padding bg-light" id="pricing" data-audience="biz">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">商家方案</p>
+        <h2 class="section-title">透明定價，沒有隱藏費用</h2>
+        <p class="section-desc">一個清楚的方案，包含您需要的一切</p>
+      </div>
+      <div class="pricing-layout">
+        <div class="pricing-card main-plan reveal">
+          <div class="plan-badge">最受歡迎</div>
+          <div class="plan-header">
+            <h3>商家基本方案</h3>
+            <div class="plan-price">
+              <span class="price-currency">$</span>
+              <span class="price-amount">9,900</span>
+              <span class="price-period">/ 年</span>
+            </div>
+            <p class="plan-desc">月均不到 $825，讓您的店面全年在線</p>
+          </div>
+          <ul class="plan-features">
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="#C9A84C"><path d="M9 0a9 9 0 100 18A9 9 0 009 0zm4.2 7L8.3 11.9a.8.8 0 01-1.1 0L4.8 9.5a.8.8 0 011.1-1.1l1.8 1.8 4.3-4.3A.8.8 0 0113.2 7z"/></svg>一頁式響應式網頁（手機、平板、電腦全適配）</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="#C9A84C"><path d="M9 0a9 9 0 100 18A9 9 0 009 0zm4.2 7L8.3 11.9a.8.8 0 01-1.1 0L4.8 9.5a.8.8 0 011.1-1.1l1.8 1.8 4.3-4.3A.8.8 0 0113.2 7z"/></svg>每月一次免費資訊更新</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="#C9A84C"><path d="M9 0a9 9 0 100 18A9 9 0 009 0zm4.2 7L8.3 11.9a.8.8 0 01-1.1 0L4.8 9.5a.8.8 0 011.1-1.1l1.8 1.8 4.3-4.3A.8.8 0 0113.2 7z"/></svg>Line 諮詢服務支援</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="#C9A84C"><path d="M9 0a9 9 0 100 18A9 9 0 009 0zm4.2 7L8.3 11.9a.8.8 0 01-1.1 0L4.8 9.5a.8.8 0 011.1-1.1l1.8 1.8 4.3-4.3A.8.8 0 0113.2 7z"/></svg>基本 SEO 設定（讓 Google 找得到）</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="#C9A84C"><path d="M9 0a9 9 0 100 18A9 9 0 009 0zm4.2 7L8.3 11.9a.8.8 0 01-1.1 0L4.8 9.5a.8.8 0 011.1-1.1l1.8 1.8 4.3-4.3A.8.8 0 0113.2 7z"/></svg>上線後專屬客服追蹤</li>
+          </ul>
+          <a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-accent btn-full">現在諮詢，了解更多</a>
+        </div>
+
+        <div class="addons-section reveal">
+          <h3 class="addons-title">加購服務</h3>
+          <p class="addons-desc">依您的需求彈性加購，一切透明報價</p>
+          <div class="addon-card">
+            <div class="addon-icon">🎨</div>
+            <div class="addon-info"><h4>圖文製作</h4><p>菜單圖、活動海報、促銷貼文⋯品牌風格一致的視覺素材，為您的社群加分</p></div>
+            <div class="addon-cta"><a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-outline btn-sm">詢問報價</a></div>
+          </div>
+          <div class="addon-card">
+            <div class="addon-icon">📷</div>
+            <div class="addon-info"><h4>基礎產品拍攝後製</h4><p>店面環境、招牌餐點、商品陳列⋯專業拍攝加後製，讓網頁第一印象就抓住客人</p></div>
+            <div class="addon-cta"><a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-outline btn-sm">詢問報價</a></div>
+          </div>
+          <div class="addon-card">
+            <div class="addon-icon">🎬</div>
+            <div class="addon-info"><h4>短影音製作</h4><p>IG Reels、TikTok、YouTube Shorts⋯短影音是現在最強的免費流量，讓更多人認識您</p></div>
+            <div class="addon-cta"><a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-outline btn-sm">詢問報價</a></div>
+          </div>
+          <div class="addon-card">
+            <div class="addon-icon">💬</div>
+            <div class="addon-info"><h4>商家官方 LINE 代理設置</h4><p>LINE 官方帳號申請、自動回覆設定、優惠券發送⋯讓顧客一鍵聯繫，黏住老客人</p></div>
+            <div class="addon-cta"><a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-outline btn-sm">詢問報價</a></div>
+          </div>
+          <div class="addon-card addon-card--highlight">
+            <div class="addon-icon">🛠️</div>
+            <div class="addon-info"><h4>小工具 / 小程式開發</h4><p>LINE Bot、預約系統、報價計算機、優惠券生成器⋯量身客製</p></div>
+            <div class="addon-cta"><a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-outline btn-sm">詢問報價</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BIZ PORTFOLIO -->
+  <section class="portfolio section-padding" id="portfolio" data-audience="biz">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">商家案例</p>
+        <h2 class="section-title">看看我們幫客戶做了什麼</h2>
+        <p class="section-desc">每個行業都有適合的呈現方式</p>
+      </div>
+      <div class="portfolio-grid">
+        <div class="portfolio-card reveal" data-delay="0">
+          <div class="portfolio-preview live-preview">
+            <div class="iframe-scale-wrap">
+              <iframe src="/demo-restaurant/" title="福記豆花官網預覽" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+            <a href="/demo-restaurant/" target="_blank" rel="noopener" class="preview-overlay" aria-label="查看福記豆花完整網站">
+              <span class="preview-overlay-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="white"><path d="M6 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-3M9 2h5v5M8.5 7.5L14 2" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>查看完整網站</span>
+            </a>
+          </div>
+          <div class="portfolio-info">
+            <span class="portfolio-tag">甜品 / 飲料</span>
+            <h4>福記豆花</h4>
+            <p>傳統老店數位化，完整呈現招牌品項與營業資訊，讓外地客人也能提前查詢。</p>
+          </div>
+        </div>
+        <div class="portfolio-card reveal" data-delay="1">
+          <div class="portfolio-preview" style="background: linear-gradient(135deg, #1A0A1A 0%, #4A1A5A 50%, #8B3A9B 100%); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px;">
+            <div style="font-size:2.8rem;">💅</div>
+            <div style="color:#D4A0E0; font-weight:700; font-size:1.1rem; letter-spacing:0.08em;">美甲工作室</div>
+            <div style="color:rgba(255,255,255,0.6); font-size:0.78rem; text-align:center; padding:0 1.5rem;">精緻美甲美容<br/>一頁式官網</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:0 1rem;">
+              <span style="background:rgba(212,160,224,0.2); color:#D4A0E0; font-size:0.68rem; padding:3px 8px; border-radius:20px; border:1px solid rgba(212,160,224,0.3);">作品集</span>
+              <span style="background:rgba(212,160,224,0.2); color:#D4A0E0; font-size:0.68rem; padding:3px 8px; border-radius:20px; border:1px solid rgba(212,160,224,0.3);">線上預約</span>
+              <span style="background:rgba(212,160,224,0.2); color:#D4A0E0; font-size:0.68rem; padding:3px 8px; border-radius:20px; border:1px solid rgba(212,160,224,0.3);">服務項目</span>
+            </div>
+          </div>
+          <div class="portfolio-info">
+            <span class="portfolio-tag">美甲 / 美容</span>
+            <h4>美甲工作室</h4>
+            <p>精緻作品集展示加上線上預約資訊，讓新客人透過網頁就能建立信任感。</p>
+          </div>
+        </div>
+        <div class="portfolio-card reveal" data-delay="2">
+          <div class="portfolio-preview coming-soon-preview">
+            <div class="coming-soon-inner">
+              <div class="cs-icon"><svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" stroke="rgba(201,168,76,0.5)" stroke-width="1.5" stroke-dasharray="4 3"/><line x1="24" y1="16" x2="24" y2="24" stroke="#C9A84C" stroke-width="2" stroke-linecap="round"/><circle cx="24" cy="28" r="1.5" fill="#C9A84C"/></svg></div>
+              <p>您的案例<br/>即將登場</p>
+            </div>
+          </div>
+          <div class="portfolio-info">
+            <span class="portfolio-tag">下一個是您</span>
+            <h4>您的店家名稱</h4>
+            <p>無論是餐廳、傳統商店、服務業，我們都能為您量身打造最適合的一頁式官網。</p>
+          </div>
+        </div>
+      </div>
+      <div class="portfolio-cta reveal">
+        <p>您的行業不在上面？<strong>我們接受各種類型的商家</strong></p>
+        <a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-primary">詢問您的行業適合什麼方案</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================
+       PERSONAL SECTIONS  (data-audience="personal")
+  ==================================================== -->
+
+  <!-- PERSONAL PAIN POINTS -->
+  <section class="pain-points section-padding personal-tint" id="why-personal" data-audience="personal">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">業務 &amp; 團媽的困境</p>
+        <h2 class="section-title">靠截圖介紹自己，<br/>客人怎麼信任你？</h2>
+        <p class="section-desc">沒有專屬形象頁，就是把信任感拱手相讓</p>
+      </div>
+      <div class="cards-grid">
+        <div class="pain-card pain-card--personal reveal" data-delay="0">
+          <div class="pain-icon">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="8" y="8" width="32" height="32" rx="4" stroke="#1C1C1C" stroke-width="2"/><path d="M16 20h8M16 26h16M16 32h12" stroke="#C9A84C" stroke-width="2" stroke-linecap="round"/><circle cx="34" cy="16" r="5" fill="#C9A84C" opacity=".2"/><line x1="34" y1="13" x2="34" y2="19" stroke="#C9A84C" stroke-width="1.5" stroke-linecap="round"/><circle cx="34" cy="20.5" r="1" fill="#C9A84C"/></svg>
+          </div>
+          <h3>靠截圖介紹自己</h3>
+          <p>用 LINE 傳截圖、複製貼文介紹自己的服務，看起來不專業，新客人難以建立信任。</p>
+          <div class="pain-solution">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="#C9A84C"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.7 6.2L7.4 10.5a.7.7 0 01-1 0L4.3 8.4a.7.7 0 011-1l1.6 1.6 3.8-3.8a.7.7 0 011 1z"/></svg>
+            專屬形象頁，一個連結秒傳完整資訊
+          </div>
+        </div>
+        <div class="pain-card pain-card--personal reveal" data-delay="1">
+          <div class="pain-icon">
+            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="18" r="8" stroke="#1C1C1C" stroke-width="2"/><path d="M10 40c0-7.7 6.3-14 14-14s14 6.3 14 14" stroke="#C9A84C" stroke-width="2.5" stroke-linecap="round"/><path d="M34 30l4 4-4 4" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>無法展示成功案例</h3>
+          <p>有很多客人見證和成功案例，卻沒有一個地方可以完整展示，白白浪費了最有力的說服工具。</p>
+          <div class="pain-solution">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="#C9A84C"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.7 6.2L7.4 10.5a.7.7 0 01-1 0L4.3 8.4a.7.7 0 011-1l1.6 1.6 3.8-3.8a.7.7 0 011 1z"/></svg>
+            見證牆 + 案例展示，讓成果幫你說話
+          </div>
+        </div>
+        <div class="pain-card pain-card--personal reveal" data-delay="2">
+          <div class="pain-icon">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="10" y="10" width="12" height="12" rx="2" stroke="#1C1C1C" stroke-width="2"/><rect x="26" y="10" width="12" height="12" rx="2" stroke="#C9A84C" stroke-width="2"/><rect x="10" y="26" width="12" height="12" rx="2" stroke="#C9A84C" stroke-width="2"/><rect x="26" y="26" width="12" height="12" rx="2" stroke="#1C1C1C" stroke-width="2" stroke-dasharray="3 2"/></svg>
+          </div>
+          <h3>換產品就要重做資料</h3>
+          <p>每換一條產品線就要重新製作介紹資料，費時費力，還無法累積個人品牌價值。</p>
+          <div class="pain-solution">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="#C9A84C"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.7 6.2L7.4 10.5a.7.7 0 01-1 0L4.3 8.4a.7.7 0 011-1l1.6 1.6 3.8-3.8a.7.7 0 011 1z"/></svg>
+            每月一次更新，產品換了一鍵同步
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PERSONAL PRICING -->
+  <section class="pricing section-padding bg-light" id="pricing-personal" data-audience="personal">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">個人形象方案</p>
+        <h2 class="section-title">打造您的個人 IP，<br/>讓品牌為你工作</h2>
+        <p class="section-desc">一頁式形象頁，全年在線幫您開發新客</p>
+      </div>
+      <div class="pricing-layout">
+        <div class="pricing-card pricing-card--personal main-plan reveal">
+          <div class="plan-badge">個人專屬</div>
+          <div class="plan-header">
+            <h3>個人形象方案</h3>
+            <div class="plan-price">
+              <span class="price-currency">$</span>
+              <span class="price-amount">9,900</span>
+              <span class="price-period">/ 年</span>
+            </div>
+            <p class="plan-desc">月均不到 $825，24 小時替您建立信任</p>
+          </div>
+          <ul class="plan-features">
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="#C9A84C"><path d="M9 0a9 9 0 100 18A9 9 0 009 0zm4.2 7L8.3 11.9a.8.8 0 01-1.1 0L4.8 9.5a.8.8 0 011.1-1.1l1.8 1.8 4.3-4.3A.8.8 0 0113.2 7z"/></svg>個人品牌故事 + 服務介紹</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="#C9A84C"><path d="M9 0a9 9 0 100 18A9 9 0 009 0zm4.2 7L8.3 11.9a.8.8 0 01-1.1 0L4.8 9.5a.8.8 0 011.1-1.1l1.8 1.8 4.3-4.3A.8.8 0 0113.2 7z"/></svg>客戶見證 / 成功案例展示區</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="#C9A84C"><path d="M9 0a9 9 0 100 18A9 9 0 009 0zm4.2 7L8.3 11.9a.8.8 0 01-1.1 0L4.8 9.5a.8.8 0 011.1-1.1l1.8 1.8 4.3-4.3A.8.8 0 0113.2 7z"/></svg>產品 / 服務列表（隨時可更新）</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="#C9A84C"><path d="M9 0a9 9 0 100 18A9 9 0 009 0zm4.2 7L8.3 11.9a.8.8 0 01-1.1 0L4.8 9.5a.8.8 0 011.1-1.1l1.8 1.8 4.3-4.3A.8.8 0 0113.2 7z"/></svg>Line / 電話一鍵聯繫 CTA</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="#C9A84C"><path d="M9 0a9 9 0 100 18A9 9 0 009 0zm4.2 7L8.3 11.9a.8.8 0 01-1.1 0L4.8 9.5a.8.8 0 011.1-1.1l1.8 1.8 4.3-4.3A.8.8 0 0113.2 7z"/></svg>每月一次免費更新（換產品、加見證）</li>
+          </ul>
+          <a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-accent btn-full">現在諮詢，打造我的形象頁</a>
+        </div>
+
+        <div class="addons-section reveal">
+          <h3 class="addons-title">加購服務</h3>
+          <p class="addons-desc">讓您的個人品牌更完整</p>
+          <div class="addon-card">
+            <div class="addon-icon">📸</div>
+            <div class="addon-info"><h4>個人形象拍攝</h4><p>專業個人照、產品照，提升頁面質感與信任度</p></div>
+            <div class="addon-cta"><a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-outline btn-sm">詢問報價</a></div>
+          </div>
+          <div class="addon-card">
+            <div class="addon-icon">✍️</div>
+            <div class="addon-info"><h4>個人品牌文案撰寫</h4><p>從您的故事提煉品牌核心，讓文字幫您說話</p></div>
+            <div class="addon-cta"><a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-outline btn-sm">詢問報價</a></div>
+          </div>
+          <div class="addon-card">
+            <div class="addon-icon">📱</div>
+            <div class="addon-info"><h4>社群媒體代管</h4><p>Facebook、Instagram 定期發文，強化您的個人 IP</p></div>
+            <div class="addon-cta"><a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-outline btn-sm">詢問報價</a></div>
+          </div>
+          <div class="addon-card addon-card--highlight">
+            <div class="addon-icon">🛠️</div>
+            <div class="addon-info"><h4>小工具 / 小程式開發</h4><p>LINE Bot、自動回覆、報價計算機⋯讓工具幫您省時間</p></div>
+            <div class="addon-cta"><a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-outline btn-sm">詢問報價</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PERSONAL PORTFOLIO -->
+  <section class="portfolio section-padding personal-tint" id="portfolio-personal" data-audience="personal">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">個人形象案例</p>
+        <h2 class="section-title">他們都靠一頁，<br/>讓品牌說話</h2>
+        <p class="section-desc">業務、團媽、個人創業者，都適合擁有自己的形象頁</p>
+      </div>
+      <div class="portfolio-grid">
+        <div class="portfolio-card reveal" data-delay="0">
+          <div class="portfolio-preview live-preview">
+            <div class="iframe-scale-wrap">
+              <iframe src="/business-profile/" title="業務形象頁範例預覽" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+            <a href="/business-profile/" target="_blank" rel="noopener" class="preview-overlay" aria-label="查看業務形象頁範例">
+              <span class="preview-overlay-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="white"><path d="M6 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-3M9 2h5v5M8.5 7.5L14 2" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>查看完整範例</span>
+            </a>
+          </div>
+          <div class="portfolio-info">
+            <span class="portfolio-tag">業務顧問</span>
+            <h4>業務形象頁範例</h4>
+            <p>個人品牌故事、服務項目、成功案例、客戶見證一頁搞定，新客人加 LINE 前就建立信任。</p>
+          </div>
+        </div>
+        <div class="portfolio-card reveal" data-delay="1">
+          <div class="portfolio-preview" style="background: linear-gradient(135deg, #1A4A2E 0%, #3D8B5C 100%);">
+            <div class="preview-mock">
+              <div class="mock-bar"></div>
+              <div class="mock-hero"></div>
+              <div class="mock-content"><div class="mock-line"></div><div class="mock-line short"></div></div>
+            </div>
+          </div>
+          <div class="portfolio-info">
+            <span class="portfolio-tag">團媽</span>
+            <h4>團媽形象頁範例</h4>
+            <p>商品分類、團購說明、LINE 加入一鍵到位，讓新團員快速了解你是誰、你在賣什麼。</p>
+          </div>
+        </div>
+        <div class="portfolio-card reveal" data-delay="2">
+          <div class="portfolio-preview coming-soon-preview">
+            <div class="coming-soon-inner">
+              <div class="cs-icon"><svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" stroke="rgba(201,168,76,0.5)" stroke-width="1.5" stroke-dasharray="4 3"/><line x1="24" y1="16" x2="24" y2="24" stroke="#C9A84C" stroke-width="2" stroke-linecap="round"/><circle cx="24" cy="28" r="1.5" fill="#C9A84C"/></svg></div>
+              <p>您的故事<br/>即將登場</p>
+            </div>
+          </div>
+          <div class="portfolio-info">
+            <span class="portfolio-tag">下一個是您</span>
+            <h4>您的名字 / 品牌名</h4>
+            <p>不論是業務、團媽、個人創業，您的品牌故事值得被更多人看見。</p>
+          </div>
+        </div>
+      </div>
+      <div class="portfolio-cta reveal">
+        <p>您想要什麼樣的個人形象頁？<strong>告訴我們，我們來打造</strong></p>
+        <a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-primary">透過 Line 聊聊我的需求</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================
+       SHARED SECTIONS  (data-audience="both")
+  ==================================================== -->
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works section-padding bg-light" id="services" data-audience="both">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">如何使用我們解決數位銜接困擾？</p>
+        <h2 class="section-title">三步驟，由我們幫您全程處理</h2>
+        <p class="section-desc">從諮詢到上線最快一週，之後維護與更新也全包</p>
+      </div>
+      <div class="steps-wrapper">
+        <div class="step reveal" data-delay="0">
+          <div class="step-number">01</div>
+          <div class="step-icon">
+            <svg viewBox="0 0 48 48" fill="none"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.76 1.31 5.22 3.37 6.91L4.5 22l4.29-1.43C9.8 20.83 10.88 21 12 21c5.52 0 10-4.03 10-9S17.52 2 12 2z" fill="#C9A84C" transform="translate(12, 12) scale(1.2)"/></svg>
+          </div>
+          <h3>透過 Line 聯繫我們</h3>
+          <p>加入我們的 Line 官方帳號，告訴我們您的類型與基本需求，完全免費諮詢。</p>
+        </div>
+        <div class="step-arrow reveal" data-delay="1" aria-hidden="true">
+          <svg viewBox="0 0 48 24" fill="none"><path d="M0 12 H40 M32 4 L44 12 L32 20" stroke="#C9A84C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="step reveal" data-delay="2">
+          <div class="step-number">02</div>
+          <div class="step-icon">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="8" y="8" width="32" height="32" rx="4" stroke="#C9A84C" stroke-width="2.5"/><line x1="16" y1="18" x2="32" y2="18" stroke="#C9A84C" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="24" x2="28" y2="24" stroke="#C9A84C" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="30" x2="24" y2="30" stroke="#C9A84C" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3>提供您的資訊</h3>
+          <p>告訴我們您的故事、照片、聯絡方式，我們幫您整理成最吸引人的網頁內容。</p>
+        </div>
+        <div class="step-arrow reveal" data-delay="3" aria-hidden="true">
+          <svg viewBox="0 0 48 24" fill="none"><path d="M0 12 H40 M32 4 L44 12 L32 20" stroke="#C9A84C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="step reveal" data-delay="4">
+          <div class="step-number">03</div>
+          <div class="step-icon">
+            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="16" stroke="#C9A84C" stroke-width="2.5"/><path d="M17 24l5 5 9-9" stroke="#C9A84C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>上線！</h3>
+          <p>最快一週內，您的網頁正式上線。之後每月可免費提交一次更新需求，我們幫您維護。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT FORM -->
+  <section class="contact section-padding" id="contact" data-audience="both">
+    <div class="container">
+      <div class="contact-layout">
+        <div class="contact-info reveal">
+          <p class="section-label">開始合作</p>
+          <h2 class="section-title">讓我們先了解<br />您的需求</h2>
+          <p class="contact-desc">填寫下方表單，我們會在一個工作天內透過 Line 與您聯繫。</p>
+          <div class="contact-features">
+            <div class="contact-feature"><svg width="20" height="20" viewBox="0 0 20 20" fill="#C9A84C"><path d="M10 0a10 10 0 100 20A10 10 0 0010 0zm4.7 7.8L9.2 13.1a.9.9 0 01-1.3 0L5.3 10.5a.9.9 0 111.3-1.3l2 2 4.8-4.8a.9.9 0 011.3 1.4z"/></svg>免費諮詢，無任何壓力</div>
+            <div class="contact-feature"><svg width="20" height="20" viewBox="0 0 20 20" fill="#C9A84C"><path d="M10 0a10 10 0 100 20A10 10 0 0010 0zm4.7 7.8L9.2 13.1a.9.9 0 01-1.3 0L5.3 10.5a.9.9 0 111.3-1.3l2 2 4.8-4.8a.9.9 0 011.3 1.4z"/></svg>一個工作天內回覆</div>
+            <div class="contact-feature"><svg width="20" height="20" viewBox="0 0 20 20" fill="#C9A84C"><path d="M10 0a10 10 0 100 20A10 10 0 0010 0zm4.7 7.8L9.2 13.1a.9.9 0 01-1.3 0L5.3 10.5a.9.9 0 111.3-1.3l2 2 4.8-4.8a.9.9 0 011.3 1.4z"/></svg>透過 Line 全程溝通，方便快速</div>
+          </div>
+        </div>
+        <div class="contact-form-wrapper reveal">
+          <form class="contact-form" id="contactForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+            <div class="form-group">
+              <label for="contactType">我是 <span class="required">*</span></label>
+              <select id="contactType" name="contactType" required>
+                <option value="" disabled selected>請選擇</option>
+                <option value="biz">商家 / 店面 / 餐廳</option>
+                <option value="personal">業務 / 團媽 / 個人創業</option>
+                <option value="other">其他</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="storeName">您的名稱或店家名 <span class="required">*</span></label>
+              <input type="text" id="storeName" name="storeName" placeholder="例：老王牛肉麵 / 林小姐（保險業務）" required />
+            </div>
+            <div class="form-group">
+              <label for="contactInfo">Line ID 或聯絡電話 <span class="required">*</span></label>
+              <input type="text" id="contactInfo" name="contactInfo" placeholder="例：@yourlineid 或 09XX-XXX-XXX" required />
+            </div>
+            <div class="form-group">
+              <label for="needs">您最想在網頁上呈現什麼？</label>
+              <textarea id="needs" name="needs" rows="4" placeholder="例：菜單、照片、成功案例、服務項目、預約方式..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-accent btn-full" id="submitBtn">送出需求，等待 Line 聯繫</button>
+            <p class="form-privacy">您的資料僅用於服務聯繫，不會外洩或用於其他用途。</p>
+          </form>
+          <div class="form-success" id="formSuccess" style="display:none">
+            <div class="success-icon">
+              <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="28" stroke="#C9A84C" stroke-width="3"/><path d="M20 32l8 8 16-16" stroke="#C9A84C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <h3>需求已收到！</h3>
+            <p>我們會在一個工作天內透過 Line 與您聯繫，感謝您的信任。</p>
+            <a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="btn btn-primary">立即加入 Line 等待回覆</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a href="#" class="nav-logo">
+            <img src="assets/logo.png" alt="處方葉 LEAF&amp;LEAD" class="logo-img" onerror="this.style.display='none'" />
+            <span class="logo-text-wrap">
+              <span class="logo-text">處方葉</span>
+              <span class="logo-sub">LEAF &amp; LEAD</span>
+            </span>
+          </a>
+          <p>商家店面 · 個人形象<br/>讓每一種人，都被看見。</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>服務</h4>
+            <a href="#pricing">商家方案</a>
+            <a href="#pricing-personal">個人方案</a>
+            <a href="#services">服務流程</a>
+          </div>
+          <div class="footer-col">
+            <h4>案例</h4>
+            <a href="#portfolio">商家案例</a>
+            <a href="#portfolio-personal">個人案例</a>
+          </div>
+          <div class="footer-col">
+            <h4>聯繫</h4>
+            <a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener">Line 官方帳號</a>
+            <a href="#contact">填寫需求表單</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 處方葉 LEAF&amp;LEAD. All rights reserved.</p>
+        <p class="footer-tagline">讓每一個人，都被看見。</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- FLOATING LINE BUTTON -->
+  <a href="https://line.me/R/ti/p/@972knzii" target="_blank" rel="noopener" class="line-float" id="lineFloat" aria-label="透過 Line 聯繫我們">
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <circle cx="24" cy="24" r="24" fill="#06C755"/>
+      <path d="M39 22.1C39 15.4 32.3 10 24 10S9 15.4 9 22.1c0 6 5.3 11 12.5 12l1 .4.8 3.5 3.3-2c.6.1 1.2.1 1.4.1C36.7 35.1 39 28.8 39 22.1z" fill="white"/>
+    </svg>
+    <span class="line-float-label">立即諮詢</span>
+  </a>
+
+  <script src="script.js"></script>
+</body>
+</html>
