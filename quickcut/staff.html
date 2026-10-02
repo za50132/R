@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>請進 操作頁</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#2a2e33" />
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="img/icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="請進叫號" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script src="config.js"></script>
+  <script>
+    if (QC_CONFIG.supabaseUrl) document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
+</head>
+<body>
+  <div class="demo-banner" id="demoBanner" hidden>示範模式・店內密碼 111111・店長密碼 999999</div>
+
+  <!-- ===== 登入 ===== -->
+  <section class="login" id="loginView" hidden>
+    <header class="sign">
+      <div class="sign-left">
+        <img class="sign-mark" src="img/mark.svg" alt="" />
+        <div><div class="sign-name">請進</div><div class="sign-en">PLEASE COME IN</div></div>
+      </div>
+      <div class="sign-right"><span class="sign-word">叫號操作</span></div>
+    </header>
+
+    <div id="pinStep">
+      <h1>輸入店內密碼</h1>
+      <p>第一次使用才需要輸入，之後這支手機會記住。</p>
+      <form id="pinForm">
+        <input class="field" id="pinInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••" aria-label="店內密碼" />
+        <div class="err" id="pinErr"></div>
+        <button class="btn primary wide" type="submit">下一步</button>
+      </form>
+    </div>
+
+    <div id="whoStep" hidden>
+      <h1>你是哪一位？</h1>
+      <p>之後打開就會直接進入你的叫號畫面。</p>
+      <div class="who" id="whoList"></div>
+    </div>
+  </section>
+
+  <!-- ===== 叫號 ===== -->
+  <section id="mainView" hidden>
+    <div class="topbar">
+      <div class="topbar-title">請進<small>叫號操作</small></div>
+      <div class="topbar-shop">全店目前 <b class="num" id="shopNum">---</b></div>
+    </div>
+
+    <main class="wrap">
+      <div class="chips" id="chips" role="tablist" aria-label="切換設計師"></div>
+
+      <div class="me" id="meCard">
+        <div class="me-name" id="meName"></div>
+        <div class="me-num num" id="meNum">---</div>
+        <div class="me-state" id="meState"></div>
+      </div>
+
+      <button class="btn-next" id="btnNext">下一位<small id="nextHint">叫 001 號</small></button>
+
+      <div class="actions">
+        <button class="btn" id="btnCall">叫指定號碼</button>
+        <button class="btn" id="btnBreak">休息</button>
+        <button class="btn" id="btnUndo">↶ 退回</button>
+      </div>
+
+      <h2 class="section-title">大家的狀態</h2>
+      <div class="card others" id="others"></div>
+
+      <h2 class="section-title">其他</h2>
+      <div class="card">
+        <a class="row" href="index.html" target="_blank" rel="noopener">
+          <div class="row-main"><div class="row-value">查看客人看到的畫面</div></div><span class="row-go">›</span>
+        </a>
+        <button class="row btn-row" id="btnOwner" style="width:100%;border:0;background:none;text-align:left">
+          <div class="row-main"><div class="row-value">店長設定（排休、歸零、密碼、QR Code）</div></div><span class="row-go">›</span>
+        </button>
+        <button class="row btn-row" id="btnLogout" style="width:100%;border:0;background:none;text-align:left">
+          <div class="row-main"><div class="row-value" style="color:var(--danger)">登出這支手機</div></div>
+        </button>
+      </div>
+    </main>
+  </section>
+
+  <!-- ===== 店長設定 ===== -->
+  <section id="ownerView" hidden>
+    <div class="topbar">
+      <div class="topbar-title">店長設定</div>
+      <button class="btn" id="btnOwnerBack" style="padding:6px 14px">完成</button>
+    </div>
+    <main class="wrap">
+      <div class="panel">
+        <h3>設計師排休</h3>
+        <p class="hint">先選設計師，再點日期：點一下設為休假，再點一下取消。</p>
+        <div class="chips" id="offChips"></div>
+        <div class="cal-head">
+          <button class="btn" id="calPrev" aria-label="上個月">‹</button>
+          <span id="calTitle"></span>
+          <button class="btn" id="calNext" aria-label="下個月">›</button>
+        </div>
+        <div class="cal" id="cal"></div>
+      </div>
+
+      <div class="panel">
+        <h3>修改目前叫號</h3>
+        <p class="hint">跟店裡抽號機對不上時使用。下一位會從這個號碼 +1 開始。</p>
+        <form class="inline" id="setNumForm">
+          <input class="field" id="setNumInput" type="number" inputmode="numeric" min="0" max="999" placeholder="例：23" />
+          <button class="btn primary" type="submit">更新</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>今日歸零</h3>
+        <p class="hint">每天第一次叫號時會自動從 001 開始，一般不需要手動歸零。</p>
+        <button class="btn danger wide" id="btnReset">現在歸零</button>
+      </div>
+
+      <div class="panel">
+        <h3>客人頁 QR Code</h3>
+        <p class="hint">印出來貼在店門口、抽號機旁邊。</p>
+        <div class="qr" id="qr"></div>
+        <div class="code" id="customerUrl"></div>
+        <button class="btn wide" id="btnCopyUrl">複製網址</button>
+      </div>
+
+      <div class="panel" id="watchPanel">
+        <h3>Apple Watch 捷徑設定資料</h3>
+        <p class="hint">照著 README 的教學，在 iPhone「捷徑」App 建立，把下面的內容貼進去。</p>
+        <div id="watchInfo"></div>
+      </div>
+
+      <div class="panel">
+        <h3>修改密碼</h3>
+        <p class="hint">6～12 位數字。改了店內密碼之後，每位設計師的手機和 Apple Watch 捷徑都要重新輸入。</p>
+        <form class="inline" id="staffPinForm" style="margin-bottom:10px">
+          <input class="field" id="newStaffPin" type="password" inputmode="numeric" placeholder="新的店內密碼" />
+          <button class="btn primary" type="submit">更新</button>
+        </form>
+        <form class="inline" id="ownerPinForm">
+          <input class="field" id="newOwnerPin" type="password" inputmode="numeric" placeholder="新的店長密碼" />
+          <button class="btn primary" type="submit">更新</button>
+        </form>
+      </div>
+    </main>
+  </section>
+
+  <!-- 叫指定號碼 -->
+  <dialog id="callDialog">
+    <form method="dialog" id="callForm">
+      <h2 id="callTitle">叫指定號碼</h2>
+      <input class="field" id="callInput" type="number" inputmode="numeric" min="1" max="999" placeholder="號碼" />
+      <div class="dialog-actions">
+        <button class="btn" value="cancel" type="button" id="callCancel">取消</button>
+        <button class="btn primary" value="ok">叫號</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 店長密碼 -->
+  <dialog id="ownerDialog">
+    <form method="dialog" id="ownerForm">
+      <h2>輸入店長密碼</h2>
+      <input class="field" id="ownerPinInput" type="password" inputmode="numeric" placeholder="••••••" />
+      <div class="err" id="ownerErr"></div>
+      <div class="dialog-actions">
+        <button class="btn" type="button" id="ownerCancel">取消</button>
+        <button class="btn primary" value="ok">進入</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/common.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/staff.js"></script>
+</body>
+</html>
