@@ -63,11 +63,22 @@
     return cfg.designers.filter((d) => designerView(d, state, now).free).length;
   }
 
+  // 當班人員評估的等候時間：太久沒更新就視為無效
+  const WAIT_FRESH = () => (window.QC_CONFIG && window.QC_CONFIG.waitFreshMinutes) || 60;
+  function waitInfo(state) {
+    if (!state || state.waitMinutes == null || !state.waitSetAt) return null;
+    const ago = Math.max(0, Math.floor((Date.now() - state.waitSetAt) / 60000));
+    return { minutes: state.waitMinutes, ago, fresh: ago < WAIT_FRESH() };
+  }
+  const waitText = (n) => (n <= 0 ? '免等' : n >= 60 ? '60 分鐘以上' : `約 ${n} 分鐘`);
+  const agoText = (m) => (m < 1 ? '剛剛更新' : m < 60 ? `${m} 分鐘前更新` : `${Math.floor(m / 60)} 小時前更新`);
+
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
   window.QC = Object.assign(window.QC || {}, {
-    taipeiNow, toMin, pad3, addDays, weekday, shortDate, isOff, shopStatus, designerView, freeDesigners, esc,
+    taipeiNow, toMin, pad3, addDays, weekday, shortDate, isOff, shopStatus, designerView, freeDesigners,
+    waitInfo, waitText, agoText, esc,
   });
 })();

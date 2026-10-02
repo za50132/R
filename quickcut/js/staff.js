@@ -1,7 +1,7 @@
 /* 操作頁：設計師叫號＋店長設定 */
 (function () {
   const cfg = window.QC_CONFIG;
-  const { store, pad3, esc, taipeiNow, designerView, addDays, weekday } = window.QC;
+  const { store, pad3, esc, taipeiNow, designerView, waitInfo, waitText, agoText, addDays, weekday } = window.QC;
   const $ = (id) => document.getElementById(id);
   const SAVE_KEY = `qc-staff-${cfg.shopId}`;
 
@@ -110,6 +110,17 @@
     $('btnBreak').textContent = live.status === 'break' ? '回來上工' : '休息';
     $('btnBreak').classList.toggle('on', live.status === 'break');
 
+    // 等候時間評估
+    const w = waitInfo(state);
+    const waitEl = $('waitNow');
+    waitEl.classList.toggle('stale', Boolean(w && !w.fresh) || !w);
+    waitEl.innerHTML = !w ? '還沒評估：客人頁不會顯示等候時間'
+      : w.fresh ? `客人看到：<b>${esc(waitText(w.minutes))}</b>・${esc(agoText(w.ago))}`
+      : `${esc(agoText(w.ago))}，客人頁已隱藏，請重新評估`;
+    $('waitGrid').innerHTML = (cfg.waitOptions || [0, 10, 20, 30, 45, 60]).map((n) =>
+      `<button class="btn ${w && w.fresh && w.minutes === n ? 'on' : ''}" data-wait="${n}">${n === 0 ? '免等' : n >= 60 ? '60+' : n}</button>`
+    ).join('');
+
     $('others').innerHTML = cfg.designers.map((x) => {
       const xv = designerView(x, state, taipeiNow());
       return `<div class="row"><div class="row-main"><div class="row-value"><span>${esc(x.name)}・${esc(xv.label)}</span><b class="num">${xv.number ? pad3(xv.number) : ''}</b></div></div></div>`;
@@ -132,6 +143,10 @@
   }
 
   $('btnNext').addEventListener('click', () => act('next'));
+  $('waitGrid').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-wait]');
+    if (b) act('set_wait', Number(b.dataset.wait));
+  });
   $('btnBreak').addEventListener('click', () => act('toggle_break'));
   $('btnUndo').addEventListener('click', () => {
     if (confirm(`${designer(viewing).name}：退回上一次的叫號？`)) act('undo');
@@ -293,6 +308,7 @@
       <div class="kv">叫指定號碼（p_number 用「要求輸入」的數字）</div><div class="code">${esc(body({ p_action: 'call', p_number: 25 }))}</div>
       <div class="kv">休息／回來</div><div class="code">${esc(body({ p_action: 'toggle_break' }))}</div>
       <div class="kv">退回上一位</div><div class="code">${esc(body({ p_action: 'undo' }))}</div>
+      <div class="kv">更新等候時間（p_number 用「從選單中選擇」的分鐘數）</div><div class="code">${esc(body({ p_action: 'set_wait', p_number: 20 }))}</div>
       <div class="kv">查詢目前狀態</div><div class="code">${esc(body({ p_action: 'status' }))}</div>`;
   }
 

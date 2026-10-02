@@ -1,7 +1,7 @@
 /* 客人頁 */
 (function () {
   const cfg = window.QC_CONFIG;
-  const { store, pad3, esc, taipeiNow, shopStatus, designerView, freeDesigners, addDays, shortDate } = window.QC;
+  const { store, pad3, esc, taipeiNow, shopStatus, designerView, freeDesigners, waitInfo, waitText, agoText, addDays, shortDate } = window.QC;
   const $ = (id) => document.getElementById(id);
 
   let state = null;
@@ -62,10 +62,22 @@
       lastCard[d.id] = num;
     }
 
-    // 現在人少：有設計師超過一段時間沒叫號
+    // 預估等候：當班人員評估，太久沒更新就不顯示
+    const w = open.open ? waitInfo(state) : null;
+    const showWait = Boolean(w && w.fresh);
+    $('wait').hidden = !showWait;
+    if (showWait) {
+      $('waitValue').textContent = waitText(w.minutes);
+      $('waitAgo').textContent = `店內人員評估・${agoText(w.ago)}`;
+      $('wait').classList.toggle('short', w.minutes <= 10);
+      $('wait').classList.toggle('long', w.minutes >= 30);
+    }
+
+    // 現在人少：有人員評估時以評估為準（免等才算人少）；沒有評估時看設計師是否空檔
     const free = freeDesigners(cfg, state, now);
-    $('quiet').hidden = free === 0;
-    $('quietSub').textContent = free ? `目前有 ${free} 位設計師空檔中` : '';
+    const quiet = showWait ? w.minutes <= 5 : free > 0;
+    $('quiet').hidden = !quiet;
+    $('quietSub').textContent = !quiet ? '' : showWait ? '店內人員剛評估：現在免等' : `目前有 ${free} 位設計師空檔中`;
 
     // 近期休假（14 天內）
     const rows = [];

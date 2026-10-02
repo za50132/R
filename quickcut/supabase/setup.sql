@@ -39,6 +39,10 @@ create table if not exists public.designers (
 -- 最後叫號時間：用來判斷設計師是否空檔中（「現在人少」提示）
 alter table public.designers add column if not exists called_at timestamptz;
 
+-- 當班人員評估的等候時間（分鐘）與評估時間
+alter table public.shops add column if not exists wait_minutes int;
+alter table public.shops add column if not exists wait_set_at  timestamptz;
+
 create table if not exists public.days_off (
   shop_id     text not null,
   designer_id text not null,
@@ -95,7 +99,7 @@ language sql stable as $$ select (now() at time zone 'Asia/Taipei')::date $$;
 create or replace function public.qc_roll_day(p_shop text) returns void
 language plpgsql security definer set search_path = public as $$
 begin
-  update shops set day = qc_today(), last_called = 0, updated_at = now()
+  update shops set day = qc_today(), last_called = 0, wait_minutes = null, wait_set_at = null, updated_at = now()
    where id = p_shop and day <> qc_today();
   if found then
     update designers set current_number = null, called_at = null, status = 'working', updated_at = now()
@@ -137,9 +141,15 @@ end $$;
 create or replace function public.qc_fmt(n int) returns text
 language sql immutable as $$ select case when n is null then '---' else lpad(n::text, 3, '0') end $$;
 
+create or replace function public.qc_wait_text(n int) returns text
+language sql immutable as $$
+  select case when n is null then '未評估' when n <= 0 then '免等' when n >= 60 then '60 分鐘以上'
+              else '約 ' || n || ' 分鐘' end
+$$;
+
 -- ---------------------------------------------------------------------
 -- 設計師操作（操作頁、Apple Watch 捷徑都呼叫這個）
---   p_action: ping / status / next / call / undo / break / back / toggle_break
+--   p_action: ping / status / next / call / undo / break / back / toggle_break / set_wait
 -- ---------------------------------------------------------------------
 create or replace function public.staff_action(
   p_shop     text,
@@ -168,11 +178,26 @@ begin
   end if;
 
   if p_action = 'status' then
-    select '目前叫號 ' || qc_fmt(s.last_called) || coalesce(E'\n' || string_agg(
+    select '目前叫號 ' || qc_fmt(s.last_called)
+           || case when s.wait_set_at > now() - interval '60 minutes'
+                   then E'\n等候 ' || qc_wait_text(s.wait_minutes) else '' end
+           || coalesce(E'\n' || string_agg(
              x.name || '：' || case when x.status = 'break' then '休息中' else qc_fmt(x.current_number) end,
              E'\n' order by x.sort), '')
       into msg from designers x where x.shop_id = p_shop;
     return json_build_object('ok', true, 'message', msg, 'last_called', s.last_called);
+  end if;
+
+  -- 當班人員評估等候時間（p_number = 分鐘數，0 = 免等）
+  if p_action = 'set_wait' then
+    if p_number is null or p_number < 0 or p_number > 180 then
+      return json_build_object('ok', false, 'message', '請輸入 0～180 分鐘');
+    end if;
+    update shops set wait_minutes = p_number, wait_set_at = now(), updated_at = now() where id = p_shop;
+    insert into call_log (shop_id, designer_id, action, number)
+    values (p_shop, (select id from designers where shop_id = p_shop and id = p_designer), 'set_wait', p_number);
+    return json_build_object('ok', true, 'wait_minutes', p_number,
+                             'message', '等候時間：' || qc_wait_text(p_number));
   end if;
 
   select * into d from designers where shop_id = p_shop and id = p_designer for update;
@@ -182,7 +207,8 @@ begin
     -- 防止手錶連點：4 秒內重複按只算一次
     if exists (select 1 from call_log
                 where shop_id = p_shop and designer_id = p_designer and action in ('next', 'call')
-                  and not undone and created_at > now() - interval '4 seconds') then
+                  and not undone and created_at > now() - interval '4 seconds'
+                  and created_at >= (qc_today()::timestamp at time zone 'Asia/Taipei')) then
       return json_build_object('ok', true, 'number', d.current_number, 'last_called', s.last_called,
                                'message', '剛剛已叫 ' || qc_fmt(d.current_number) || ' 號');
     end if;
@@ -292,7 +318,7 @@ begin
   elsif p_action = 'reset_today' then
     insert into call_log (shop_id, action, prev_last_called)
     select p_shop, 'reset', last_called from shops where id = p_shop;
-    update shops set last_called = 0, updated_at = now() where id = p_shop;
+    update shops set last_called = 0, wait_minutes = null, wait_set_at = null, updated_at = now() where id = p_shop;
     update designers set current_number = null, called_at = null, status = 'working', updated_at = now() where shop_id = p_shop;
     return json_build_object('ok', true, 'message', '已歸零，下一位從 001 開始');
 

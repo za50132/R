@@ -132,6 +132,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
   100% { transform: scale(1); }
 }
 
+/* ===== 預估等候（當班人員評估）===== */
+.wait {
+  display: inline-flex; align-items: baseline; flex-wrap: wrap; justify-content: center; gap: 4px 10px;
+  margin-top: 14px; padding: 10px 18px; border-radius: 14px; background: var(--bg);
+}
+.wait-label { font-size: 14px; color: var(--ink-soft); font-weight: 700; }
+.wait-value { font-size: 26px; font-weight: 900; color: var(--ink); }
+.wait.short .wait-value { color: var(--ok); }
+.wait.long .wait-value { color: var(--warn); }
+.wait-ago { width: 100%; font-size: 12px; color: var(--muted); }
+
 /* ===== 現在人少 ===== */
 .quiet {
   display: flex; align-items: center; gap: 12px;
@@ -284,6 +295,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 .others { margin-top: 6px; }
 .others .row-value { display: flex; justify-content: space-between; }
+
+/* 等候時間評估 */
+.wait-panel { margin-top: 0; }
+.wait-now { margin: 0 0 12px; font-size: 14px; color: var(--ink-soft); }
+.wait-now b { color: var(--ink); font-size: 16px; }
+.wait-now.stale { color: var(--warn); font-weight: 700; }
+.wait-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.wait-grid .btn { padding: 16px 4px; font-size: 18px; background: var(--bg); box-shadow: none; }
+.wait-grid .btn.on { background: var(--teal); color: #fff; }
 
 /* 登入 */
 .login { max-width: 420px; margin: 0 auto; padding: 32px 16px; }

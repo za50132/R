@@ -25,6 +25,8 @@
     return {
       day: today,
       lastCalled: fresh ? 0 : raw.last_called,
+      waitMinutes: fresh ? null : raw.wait_minutes ?? null,
+      waitSetAt: fresh || !raw.wait_set_at ? null : Date.parse(raw.wait_set_at),
       designers,
       daysOff: raw.days_off.map((o) => ({ designer: o.designer_id, day: o.day })),
     };
@@ -41,7 +43,7 @@
     async function load() {
       const from = taipeiNow().date;
       const [s, d, o] = await Promise.all([
-        client.from('shops').select('day,last_called').eq('id', shopId).single(),
+        client.from('shops').select('day,last_called,wait_minutes,wait_set_at').eq('id', shopId).single(),
         client.from('designers').select('id,status,current_number,called_at').eq('shop_id', shopId),
         client.from('days_off').select('designer_id,day').eq('shop_id', shopId)
           .gte('day', from).lte('day', QC.addDays(from, 200)),
@@ -142,7 +144,7 @@
     function rollDay(db) {
       const today = taipeiNow().date;
       if (db.shop.day !== today) {
-        db.shop = { day: today, last_called: 0 };
+        db.shop = { day: today, last_called: 0, wait_minutes: null, wait_set_at: null };
         for (const d of Object.values(db.designers)) { d.current_number = null; d.called_at = null; d.status = 'working'; }
       }
     }
@@ -161,6 +163,12 @@
       const s = db.shop;
       if (action === 'ping') return ok('登入成功');
       if (action === 'status') return ok(`目前叫號 ${fmt(s.last_called)}`);
+      if (action === 'set_wait') {
+        if (!(number >= 0 && number <= 180)) return fail('請輸入 0～180 分鐘');
+        s.wait_minutes = number; s.wait_set_at = new Date().toISOString();
+        write(db);
+        return ok(`等候時間：${QC.waitText(number)}`);
+      }
       const d = db.designers[designer];
       if (!d) return fail('找不到這位設計師');
       const name = nameOf(designer);
@@ -228,7 +236,7 @@
         return ok(`目前叫號改為 ${fmt(a.number)}`);
       }
       if (action === 'reset_today') {
-        db.shop.last_called = 0;
+        db.shop.last_called = 0; db.shop.wait_minutes = null; db.shop.wait_set_at = null;
         for (const d of Object.values(db.designers)) { d.current_number = null; d.called_at = null; d.status = 'working'; }
         write(db); return ok('已歸零，下一位從 001 開始');
       }
