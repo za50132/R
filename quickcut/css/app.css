@@ -132,6 +132,42 @@ button { font: inherit; color: inherit; cursor: pointer; }
   100% { transform: scale(1); }
 }
 
+/* ===== 現在人少 ===== */
+.quiet {
+  display: flex; align-items: center; gap: 12px;
+  background: #e5f6ec; color: #1f6b43;
+  border-radius: var(--radius); padding: 12px 16px; margin-bottom: 10px;
+  box-shadow: var(--shadow);
+}
+.quiet b { display: block; font-size: 17px; }
+.quiet small { display: block; font-size: 13px; color: #3c7d5a; }
+.quiet-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--ok); flex: none; box-shadow: 0 0 0 0 rgba(58, 163, 107, .5); animation: ring 1.8s infinite; }
+@keyframes ring { 70% { box-shadow: 0 0 0 10px rgba(58, 163, 107, 0); } 100% { box-shadow: 0 0 0 0 rgba(58, 163, 107, 0); } }
+
+/* ===== 人潮時段 ===== */
+.crowd { padding: 12px 14px 14px; }
+.dow-tabs { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.dow-tabs button {
+  border: 0; border-radius: 10px; background: var(--bg); padding: 6px 0; font-weight: 700; font-size: 14px; color: var(--ink-soft);
+}
+.dow-tabs button.on { background: var(--ink); color: #fff; }
+.bars { display: flex; align-items: flex-end; gap: 3px; height: 120px; margin-top: 18px; position: relative; }
+.bar { flex: 1; border-radius: 4px 4px 0 0; background: #c3e5e0; position: relative; min-height: 4px; }
+.bar.mid { background: #7cc5bc; }
+.bar.high { background: #f0b77c; }
+.bar.now { outline: 2px solid var(--ink); outline-offset: 1px; }
+.bar.now::after {
+  content: '現在'; position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; font-weight: 700; color: var(--ink); white-space: nowrap;
+}
+.bars-axis { display: flex; gap: 3px; margin-top: 4px; }
+.bars-axis span { flex: 1; text-align: center; font-size: 11px; color: var(--muted); }
+.legend { display: flex; gap: 14px; justify-content: center; font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.crowd-tip { background: var(--teal-soft); color: var(--teal-dark); border-radius: 12px; padding: 10px 12px; margin: 12px 0 0; font-size: 15px; font-weight: 700; }
+.crowd-note { font-size: 12px; color: var(--muted); margin: 8px 0 0; text-align: center; }
+.crowd-empty { color: var(--ink-soft); font-size: 14px; padding: 14px 4px 4px; text-align: center; }
+
 /* ===== 設計師卡片 ===== */
 .section-title { font-size: 15px; font-weight: 700; color: var(--ink-soft); margin: 22px 4px 10px; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

@@ -36,6 +36,9 @@ create table if not exists public.designers (
   primary key (shop_id, id)
 );
 
+-- 最後叫號時間：用來判斷設計師是否空檔中（「現在人少」提示）
+alter table public.designers add column if not exists called_at timestamptz;
+
 create table if not exists public.days_off (
   shop_id     text not null,
   designer_id text not null,
@@ -95,7 +98,7 @@ begin
   update shops set day = qc_today(), last_called = 0, updated_at = now()
    where id = p_shop and day <> qc_today();
   if found then
-    update designers set current_number = null, status = 'working', updated_at = now()
+    update designers set current_number = null, called_at = null, status = 'working', updated_at = now()
      where shop_id = p_shop;
   end if;
 end $$;
@@ -188,7 +191,7 @@ begin
     insert into call_log (shop_id, designer_id, action, number, prev_number, prev_last_called)
     values (p_shop, p_designer, 'next', n, d.current_number, s.last_called);
     update shops set last_called = n, updated_at = now() where id = p_shop;
-    update designers set current_number = n, status = 'working', updated_at = now()
+    update designers set current_number = n, called_at = now(), status = 'working', updated_at = now()
      where shop_id = p_shop and id = p_designer;
     return json_build_object('ok', true, 'number', n, 'last_called', n,
                              'message', d.name || ' 叫號 ' || qc_fmt(n));
@@ -200,7 +203,7 @@ begin
     insert into call_log (shop_id, designer_id, action, number, prev_number, prev_last_called)
     values (p_shop, p_designer, 'call', p_number, d.current_number, s.last_called);
     update shops set last_called = greatest(last_called, p_number), updated_at = now() where id = p_shop;
-    update designers set current_number = p_number, status = 'working', updated_at = now()
+    update designers set current_number = p_number, called_at = now(), status = 'working', updated_at = now()
      where shop_id = p_shop and id = p_designer;
     return json_build_object('ok', true, 'number', p_number, 'last_called', greatest(s.last_called, p_number),
                              'message', d.name || ' 叫號 ' || qc_fmt(p_number));
@@ -212,7 +215,12 @@ begin
      order by id desc limit 1 for update;
     if not found then return json_build_object('ok', false, 'message', '沒有可以退回的叫號'); end if;
     update call_log set undone = true where id = l.id;
-    update designers set current_number = l.prev_number, updated_at = now()
+    update designers
+       set current_number = l.prev_number,
+           called_at = (select max(created_at) from call_log
+                         where shop_id = p_shop and designer_id = p_designer and action in ('next', 'call')
+                           and not undone and created_at >= (qc_today()::timestamp at time zone 'Asia/Taipei')),
+           updated_at = now()
      where shop_id = p_shop and id = p_designer;
     -- 只有在這之後沒人再叫號時，才把全店號碼一起退回
     if s.last_called = l.number then
@@ -285,7 +293,7 @@ begin
     insert into call_log (shop_id, action, prev_last_called)
     select p_shop, 'reset', last_called from shops where id = p_shop;
     update shops set last_called = 0, updated_at = now() where id = p_shop;
-    update designers set current_number = null, status = 'working', updated_at = now() where shop_id = p_shop;
+    update designers set current_number = null, called_at = null, status = 'working', updated_at = now() where shop_id = p_shop;
     return json_build_object('ok', true, 'message', '已歸零，下一位從 001 開始');
 
   elsif p_action in ('set_staff_pin', 'set_owner_pin') then
@@ -303,11 +311,40 @@ begin
   return json_build_object('ok', false, 'message', '不認識的操作：' || p_action);
 end $$;
 
+-- ---------------------------------------------------------------------
+-- 人潮統計（客人頁「什麼時候來最不用等」）
+-- 只回傳過去 8 週「每個星期幾、每個小時」平均叫號人數，不會透露任何單筆紀錄。
+-- ---------------------------------------------------------------------
+create or replace function public.crowd_stats(p_shop text) returns json
+language sql stable security definer set search_path = public as $$
+  with calls as (
+    select created_at at time zone 'Asia/Taipei' as t
+      from call_log
+     where shop_id = p_shop and action in ('next', 'call') and not undone
+       and created_at >= now() - interval '56 days'
+       and created_at < (qc_today()::timestamp at time zone 'Asia/Taipei')   -- 不含今天
+  ),
+  days as (select t::date as d from calls group by 1),
+  per_dow as (select extract(dow from d)::int as dow, count(*) as n from days group by 1),
+  per_hour as (
+    select extract(dow from t)::int as dow, extract(hour from t)::int as hour, count(*) as c
+      from calls group by 1, 2
+  )
+  select json_build_object(
+    'days', (select count(*) from days),
+    'hours', coalesce((
+      select json_agg(json_build_object('dow', h.dow, 'hour', h.hour, 'avg', round(h.c::numeric / p.n, 1))
+                      order by h.dow, h.hour)
+        from per_hour h join per_dow p using (dow)), '[]'::json)
+  );
+$$;
+
 -- 內部工具不對外開放；只開放 staff_action / owner_action
 revoke execute on function public.qc_roll_day(text)                from public, anon, authenticated;
 revoke execute on function public.qc_check_pin(text, text, boolean) from public, anon, authenticated;
 grant  execute on function public.staff_action(text, text, text, text, int) to anon, authenticated;
 grant  execute on function public.owner_action(text, text, text, text, date, int, text) to anon, authenticated;
+grant  execute on function public.crowd_stats(text) to anon, authenticated;
 
 -- ---------------------------------------------------------------------
 -- 即時同步：這三張表有變動時，客人頁會立刻更新

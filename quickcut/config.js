@@ -11,6 +11,9 @@ window.QC_CONFIG = {
 
   shopId: 'qingjin',    // 要跟 supabase/setup.sql 裡的店家代號一樣
 
+  // 設計師超過幾分鐘沒叫號，就當作「空檔中」，客人頁會顯示「現在人少」
+  idleMinutes: 20,
+
   // ===== 店家資料 =====
   shop: {
     name: '請進',

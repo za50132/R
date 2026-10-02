@@ -44,6 +44,11 @@
       <span class="live" id="live"><span class="dot"></span><span id="liveLabel">連線中…</span></span>
     </div>
 
+    <div class="quiet" id="quiet" role="status" hidden>
+      <span class="quiet-dot"></span>
+      <div><b>現在人少，到店幾乎不用等</b><small id="quietSub"></small></div>
+    </div>
+
     <section class="hero" aria-live="polite">
       <div class="hero-label">目前叫號</div>
       <div class="hero-num num" id="heroNum">---</div>
@@ -52,6 +57,12 @@
 
     <h2 class="section-title">設計師</h2>
     <section class="grid" id="designers"></section>
+
+    <h2 class="section-title">什麼時候來最不用等</h2>
+    <section class="card crowd">
+      <div class="dow-tabs" id="dowTabs" role="tablist" aria-label="選擇星期"></div>
+      <div id="crowdBody"></div>
+    </section>
 
     <h2 class="section-title">近期休假</h2>
     <section class="card">

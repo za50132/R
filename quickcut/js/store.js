@@ -18,8 +18,9 @@
     const fresh = raw.day !== today;
     const designers = {};
     for (const d of raw.designers) {
-      designers[d.id] = fresh ? { status: 'working', number: null }
-                              : { status: d.status, number: d.current_number };
+      designers[d.id] = fresh ? { status: 'working', number: null, calledAt: null }
+                              : { status: d.status, number: d.current_number,
+                                  calledAt: d.called_at ? Date.parse(d.called_at) : null };
     }
     return {
       day: today,
@@ -41,7 +42,7 @@
       const from = taipeiNow().date;
       const [s, d, o] = await Promise.all([
         client.from('shops').select('day,last_called').eq('id', shopId).single(),
-        client.from('designers').select('id,status,current_number').eq('shop_id', shopId),
+        client.from('designers').select('id,status,current_number,called_at').eq('shop_id', shopId),
         client.from('days_off').select('designer_id,day').eq('shop_id', shopId)
           .gte('day', from).lte('day', QC.addDays(from, 200)),
       ]);
@@ -83,10 +84,17 @@
       return data;
     }
 
+    async function crowdStats() {
+      const { data, error } = await client.rpc('crowd_stats', { p_shop: shopId });
+      if (error) throw error;
+      return data;
+    }
+
     return {
       mode: 'supabase',
       load,
       subscribe,
+      crowdStats,
       staff: (pin, designer, action, number = null) =>
         rpc('staff_action', { p_shop: shopId, p_pin: pin, p_designer: designer, p_action: action, p_number: number }),
       owner: (pin, action, a = {}) =>
@@ -135,7 +143,7 @@
       const today = taipeiNow().date;
       if (db.shop.day !== today) {
         db.shop = { day: today, last_called: 0 };
-        for (const d of Object.values(db.designers)) { d.current_number = null; d.status = 'working'; }
+        for (const d of Object.values(db.designers)) { d.current_number = null; d.called_at = null; d.status = 'working'; }
       }
     }
     const nameOf = (id) => (cfg.designers.find((d) => d.id === id) || {}).name;
@@ -165,14 +173,15 @@
         const n = s.last_called + 1;
         if (n > 999) return fail('號碼已到 999，請店長修改號碼');
         db.log.unshift({ designer, action, number: n, prev: d.current_number, prevLast: s.last_called, at: now, day: s.day });
-        s.last_called = n; d.current_number = n; d.status = 'working';
+        s.last_called = n; d.current_number = n; d.called_at = new Date(now).toISOString(); d.status = 'working';
         write(db);
         return ok(`${name} 叫號 ${fmt(n)}`, { number: n });
       }
       if (action === 'call') {
         if (!(number >= 1 && number <= 999)) return fail('請輸入 1～999 的號碼');
         db.log.unshift({ designer, action, number, prev: d.current_number, prevLast: s.last_called, at: now, day: s.day });
-        s.last_called = Math.max(s.last_called, number); d.current_number = number; d.status = 'working';
+        s.last_called = Math.max(s.last_called, number); d.current_number = number;
+        d.called_at = new Date(now).toISOString(); d.status = 'working';
         write(db);
         return ok(`${name} 叫號 ${fmt(number)}`, { number });
       }
@@ -182,6 +191,9 @@
         if (!l) return fail('沒有可以退回的叫號');
         l.undone = true;
         d.current_number = l.prev;
+        const before = db.log.find((x) => x.designer === designer && !x.undone &&
+          (x.action === 'next' || x.action === 'call') && x.day === s.day);
+        d.called_at = before ? new Date(before.at).toISOString() : null;
         if (s.last_called === l.number) s.last_called = l.prevLast;
         write(db);
         return ok(`${name} 已退回，目前 ${fmt(l.prev)}`, { number: l.prev });
@@ -217,7 +229,7 @@
       }
       if (action === 'reset_today') {
         db.shop.last_called = 0;
-        for (const d of Object.values(db.designers)) { d.current_number = null; d.status = 'working'; }
+        for (const d of Object.values(db.designers)) { d.current_number = null; d.called_at = null; d.status = 'working'; }
         write(db); return ok('已歸零，下一位從 001 開始');
       }
       if (action === 'set_staff_pin' || action === 'set_owner_pin') {
@@ -228,8 +240,21 @@
       return fail(`不認識的操作：${action}`);
     }
 
+    // 示範模式沒有歷史紀錄，用一組「常見快剪人潮」假資料讓畫面看得出效果
+    async function crowdStats() {
+      const weekday = [3, 5, 7, 9, 8, 4, 3, 4, 7, 10, 11, 9, 6, 2];   // 09 點～22 點
+      const weekend = [6, 9, 11, 12, 11, 9, 8, 9, 10, 11, 10, 8, 5, 2];
+      const hours = [];
+      for (let dow = 0; dow < 7; dow++) {
+        const base = dow === 0 || dow === 6 ? weekend : weekday;
+        base.forEach((v, i) => hours.push({ dow, hour: 9 + i, avg: Math.round(v * (dow === 5 ? 1.15 : 1) * 10) / 10 }));
+      }
+      return { days: 56, hours, demo: true };
+    }
+
     return {
       mode: 'demo',
+      crowdStats,
       load: async () => toState(read()),
       subscribe(onChange, onConn = () => {}) {
         listeners.add(onChange);

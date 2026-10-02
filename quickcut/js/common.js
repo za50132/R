@@ -39,14 +39,28 @@
   }
 
   // 設計師在客人眼中的狀態
+  //   free = true 代表「應該空檔中」：在班、沒休息、而且超過 idleMinutes 沒叫號
   function designerView(d, state, now = taipeiNow()) {
-    const live = state.designers[d.id] || { status: 'working', number: null };
+    const live = state.designers[d.id] || { status: 'working', number: null, calledAt: null };
     if (isOff(state, d.id, now.date)) return { kind: 'off', label: '今日休假', number: null };
     if (now.minutes < toMin(d.start)) return { kind: 'away', label: `${d.start} 上班`, number: null };
     if (now.minutes >= toMin(d.end)) return { kind: 'away', label: '已下班', number: null };
     if (live.status === 'break') return { kind: 'break', label: '休息中', number: live.number };
-    if (live.number) return { kind: 'cutting', label: '服務中', number: live.number };
-    return { kind: 'idle', label: '上班中', number: null };
+
+    const idleMinutes = (window.QC_CONFIG && window.QC_CONFIG.idleMinutes) || 20;
+    const sinceCall = live.calledAt ? (Date.now() - live.calledAt) / 60000 : null;
+    if (live.number && (sinceCall === null || sinceCall < idleMinutes)) {
+      return { kind: 'cutting', label: '服務中', number: live.number };
+    }
+    // 剛上班的 15 分鐘內不算空檔：開門時門口可能已經有人在等，只是還沒按叫號
+    if (now.minutes - toMin(d.start) < 15) return { kind: 'idle', label: '上班中', number: live.number };
+    return { kind: 'idle', label: '空檔中', number: live.number, free: true };
+  }
+
+  // 現在有幾位設計師空檔中（只在營業時間內計算）
+  function freeDesigners(cfg, state, now = taipeiNow()) {
+    if (!state || !shopStatus(cfg, now).open) return 0;
+    return cfg.designers.filter((d) => designerView(d, state, now).free).length;
   }
 
   function esc(s) {
@@ -54,6 +68,6 @@
   }
 
   window.QC = Object.assign(window.QC || {}, {
-    taipeiNow, toMin, pad3, addDays, weekday, shortDate, isOff, shopStatus, designerView, esc,
+    taipeiNow, toMin, pad3, addDays, weekday, shortDate, isOff, shopStatus, designerView, freeDesigners, esc,
   });
 })();
