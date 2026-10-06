@@ -3,6 +3,15 @@
   const TZ = 'Asia/Taipei';
   const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 
+  // 預覽用：示範模式下可以用網址 ?t=15:00 指定時間，讓打烊後也看得到營業中的畫面
+  const PREVIEW_MIN = (() => {
+    try {
+      if (window.QC_CONFIG && window.QC_CONFIG.supabaseUrl) return null;
+      const m = /^(\d{1,2}):(\d{2})$/.exec(new URLSearchParams(location.search).get('t') || '');
+      return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+    } catch (e) { return null; }
+  })();
+
   // 不管手機設定哪個時區，一律用台北時間判斷營業、班表
   function taipeiNow(date = new Date()) {
     const parts = new Intl.DateTimeFormat('en-CA', {
@@ -10,7 +19,8 @@
       hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
     }).formatToParts(date).reduce((o, p) => (o[p.type] = p.value, o), {});
     const ymd = `${parts.year}-${parts.month}-${parts.day}`;
-    return { date: ymd, minutes: Number(parts.hour) * 60 + Number(parts.minute) };
+    const minutes = Number(parts.hour) * 60 + Number(parts.minute);
+    return { date: ymd, minutes: PREVIEW_MIN ?? minutes };
   }
 
   const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
@@ -73,12 +83,49 @@
   const waitText = (n) => (n <= 0 ? '免等' : n >= 60 ? '60 分鐘以上' : `約 ${n} 分鐘`);
   const agoText = (m) => (m < 1 ? '剛剛更新' : m < 60 ? `${m} 分鐘前更新` : `${Math.floor(m / 60)} 小時前更新`);
 
+  // ===== 排隊 =====
+  const AVG = () => (window.QC_CONFIG && window.QC_CONFIG.avgCutMinutes) || 12;
+  const waitingTickets = (state, who) =>
+    (state.tickets || []).filter((t) => t.status === 'waiting' && (who === undefined || t.designer === who));
+
+  // 現在能剪的設計師：在班、沒休假、沒休息
+  function activeDesigners(cfg, state, now = taipeiNow()) {
+    return cfg.designers.filter((d) => ['cutting', 'idle'].includes(designerView(d, state, now).kind));
+  }
+  const round5 = (m) => Math.max(0, Math.round(m / 5) * 5);
+
+  // 現在抽號（不指定）大約要等幾分鐘；沒人能剪時回傳 null
+  function estimateWait(cfg, state, now = taipeiNow()) {
+    const active = activeDesigners(cfg, state, now);
+    if (!active.length) return null;
+    const ahead = waitingTickets(state).length;
+    if (!ahead && freeDesigners(cfg, state, now) > 0) return 0;
+    // 大家都在剪：平均還要再等半個人的時間才會空出一位
+    return round5(((ahead + 0.5) * AVG()) / active.length);
+  }
+
+  // 查某一號：前面還有幾位、大約幾分鐘
+  function ticketInfo(cfg, state, number, now = taipeiNow()) {
+    const t = (state.tickets || []).find((x) => x.number === number);
+    if (!t) return number > (state.lastIssued || 0) ? { kind: 'unknown' } : { kind: 'gone' };
+    if (t.status === 'serving') return { kind: 'serving', by: t.servedBy };
+    if (t.status !== 'waiting') return { kind: t.status };
+    const active = activeDesigners(cfg, state, now);
+    if (t.designer) {
+      const ahead = waitingTickets(state, t.designer).filter((x) => x.number < number).length;
+      const on = active.some((d) => d.id === t.designer);
+      return { kind: 'waiting', ahead, designer: t.designer, minutes: on ? round5((ahead + 0.5) * AVG()) : null };
+    }
+    const ahead = waitingTickets(state).filter((x) => x.number < number).length;
+    return { kind: 'waiting', ahead, minutes: active.length ? round5(((ahead + 0.5) * AVG()) / active.length) : null };
+  }
+
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
   window.QC = Object.assign(window.QC || {}, {
     taipeiNow, toMin, pad3, addDays, weekday, shortDate, isOff, shopStatus, designerView, freeDesigners,
-    waitInfo, waitText, agoText, esc,
+    waitInfo, waitText, agoText, esc, waitingTickets, activeDesigners, estimateWait, ticketInfo,
   });
 })();

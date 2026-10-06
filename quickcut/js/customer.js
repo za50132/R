@@ -1,7 +1,8 @@
 /* 客人頁 */
 (function () {
   const cfg = window.QC_CONFIG;
-  const { store, pad3, esc, taipeiNow, shopStatus, designerView, freeDesigners, waitInfo, waitText, agoText, addDays, shortDate } = window.QC;
+  const { store, pad3, esc, taipeiNow, shopStatus, designerView, freeDesigners, waitInfo, waitText, agoText, addDays, shortDate,
+    waitingTickets, estimateWait, ticketInfo } = window.QC;
   const $ = (id) => document.getElementById(id);
 
   let state = null;
@@ -39,7 +40,10 @@
     const n = state.lastCalled;
     hero.textContent = pad3(n);
     hero.classList.toggle('idle', !n);
-    $('heroSub').textContent = n ? '請對照您的號碼牌' : (open.open ? '今天還沒開始叫號' : '休息中，明天見');
+    const tracking = state.lastIssued > 0;      // 今天有在用「加號」，系統知道排隊名單
+    const waitingCount = waitingTickets(state).length;
+    $('heroSub').textContent = tracking ? `已發到 ${pad3(state.lastIssued)} 號・等候 ${waitingCount} 人`
+      : n ? '請對照您的號碼牌' : (open.open ? '今天還沒開始叫號' : '休息中，明天見');
     if (lastHero !== null && n !== lastHero) bump(hero);
     lastHero = n;
 
@@ -49,9 +53,11 @@
       const body = v.number
         ? `<div class="dcard-num num" data-id="${d.id}">${pad3(v.number)}</div>`
         : `<div class="dcard-big-label">${v.kind === 'off' ? '休假' : v.kind === 'away' ? '不在店' : '—'}</div>`;
+      const queued = waitingTickets(state, d.id).length;
       return `<article class="dcard ${v.kind}">
         <div class="dcard-head"><span class="dcard-name">${esc(d.name)}</span><span class="dcard-role">${esc(d.role === '店長' ? '店長' : d.shift)}</span></div>
         <div class="dcard-state"><span class="dot"></span>${esc(v.label)}</div>
+        ${queued ? `<div class="dcard-queue">指定等候 ${queued} 人</div>` : ''}
         ${body}
       </article>`;
     }).join('');
@@ -62,22 +68,27 @@
       lastCard[d.id] = num;
     }
 
-    // 預估等候：當班人員評估，太久沒更新就不顯示
+    // 預估等候：當班人員有評估就用評估；沒有的話，依排隊人數自動估算
     const w = open.open ? waitInfo(state) : null;
-    const showWait = Boolean(w && w.fresh);
-    $('wait').hidden = !showWait;
-    if (showWait) {
-      $('waitValue').textContent = waitText(w.minutes);
-      $('waitAgo').textContent = `店內人員評估・${agoText(w.ago)}`;
-      $('wait').classList.toggle('short', w.minutes <= 10);
-      $('wait').classList.toggle('long', w.minutes >= 30);
+    const manual = Boolean(w && w.fresh);
+    const auto = !manual && open.open && tracking ? estimateWait(cfg, state, now) : null;
+    const minutes = manual ? w.minutes : auto;
+    $('wait').hidden = minutes == null;
+    if (minutes != null) {
+      $('waitValue').textContent = waitText(minutes);
+      $('waitAgo').textContent = manual ? `店內人員評估・${agoText(w.ago)}` : `依目前等候 ${waitingCount} 人估算（不指定設計師）`;
+      $('wait').classList.toggle('short', minutes <= 10);
+      $('wait').classList.toggle('long', minutes >= 30);
     }
 
-    // 現在人少：有人員評估時以評估為準（免等才算人少）；沒有評估時看設計師是否空檔
+    // 現在人少：人員評估 > 排隊名單 > 設計師多久沒叫號
     const free = freeDesigners(cfg, state, now);
-    const quiet = showWait ? w.minutes <= 5 : free > 0;
+    const quiet = manual ? w.minutes <= 5 : tracking ? waitingCount === 0 && free > 0 : free > 0;
     $('quiet').hidden = !quiet;
-    $('quietSub').textContent = !quiet ? '' : showWait ? '店內人員剛評估：現在免等' : `目前有 ${free} 位設計師空檔中`;
+    $('quietSub').textContent = !quiet ? '' : manual ? '店內人員剛評估：現在免等'
+      : tracking ? `沒有人在排隊・${free} 位設計師空檔中` : `目前有 ${free} 位設計師空檔中`;
+
+    renderMine(now);
 
     // 近期休假（14 天內）
     const rows = [];
@@ -87,6 +98,52 @@
       if (names.length) rows.push(`<li><span class="date">${i === 0 ? '今天' : i === 1 ? '明天' : shortDate(day)}</span><span class="names">${names.map(esc).join('、')} 休假</span></li>`);
     }
     $('offList').innerHTML = rows.length ? rows.join('') : '<li class="empty">未來兩週設計師都有上班</li>';
+  }
+
+  // ===== 查我的號碼 =====
+  const MINE_KEY = `qc-mine-${cfg.shopId}`;
+  let mine = null;     // { day, number }
+  let lastMineKind = null;
+  try { mine = JSON.parse(localStorage.getItem(MINE_KEY)); } catch (e) { /* 私密瀏覽 */ }
+
+  $('myForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const n = parseInt($('myNum').value, 10);
+    if (!(n >= 1 && n <= 999)) return;
+    mine = { day: taipeiNow().date, number: n };
+    lastMineKind = null;
+    try { localStorage.setItem(MINE_KEY, JSON.stringify(mine)); } catch (err) { /* 私密瀏覽 */ }
+    $('myNum').blur();
+    render();
+  });
+
+  function renderMine(now) {
+    // 今天有用「加號」才知道排隊名單，才顯示查詢
+    $('myCard').hidden = !(state.lastIssued > 0);
+    const box = $('myResult');
+    if (!mine || mine.day !== now.date || $('myCard').hidden) { box.textContent = ''; return; }
+    if (document.activeElement !== $('myNum')) $('myNum').value = mine.number;
+    const info = ticketInfo(cfg, state, mine.number, now);
+    const name = (id) => (cfg.designers.find((d) => d.id === id) || {}).name || '';
+    const num = `<b class="num">${pad3(mine.number)}</b> 號`;
+    let html;
+    if (info.kind === 'serving') html = `🎉 ${num} 輪到您了！請找 <b>${esc(name(info.by))}</b>`;
+    else if (info.kind === 'waiting') {
+      const who = info.designer ? `指定 ${esc(name(info.designer))}・` : '';
+      const eta = info.minutes == null ? '設計師目前不在或休息中' : `預估等候 ${waitText(info.minutes)}`;
+      html = `${num}　${who}前面還有 <b>${info.ahead}</b> 位<br><small>${esc(eta)}</small>`;
+    } else if (info.kind === 'done') html = `${num} 已完成服務，謝謝光臨`;
+    else if (info.kind === 'skipped') html = `${num} 已過號，請直接跟店內人員說一聲`;
+    else if (info.kind === 'cancelled') html = `${num} 已取消`;
+    else if (info.kind === 'unknown') html = `還沒發到 ${num}，請確認號碼牌`;
+    else html = `查不到 ${num}`;
+    box.innerHTML = html;
+    box.classList.toggle('turn', info.kind === 'serving');
+    box.classList.toggle('muted', !['serving', 'waiting'].includes(info.kind));
+    if (info.kind === 'serving' && lastMineKind && lastMineKind !== 'serving') {
+      try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) { /* iOS 不支援 */ }
+    }
+    lastMineKind = info.kind;
   }
 
   // ===== 什麼時候來最不用等 =====

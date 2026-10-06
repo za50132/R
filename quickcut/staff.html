@@ -54,7 +54,7 @@
   <section id="mainView" hidden>
     <div class="topbar">
       <div class="topbar-title">請進<small>叫號操作</small></div>
-      <div class="topbar-shop">全店目前 <b class="num" id="shopNum">---</b></div>
+      <div class="topbar-shop">叫號 <b class="num" id="shopNum">---</b><span class="topbar-q">已發 <b class="num" id="shopIssued">---</b>・等 <b class="num" id="shopWaiting">0</b></span></div>
     </div>
 
     <main class="wrap">
@@ -64,14 +64,27 @@
         <div class="me-name" id="meName"></div>
         <div class="me-num num" id="meNum">---</div>
         <div class="me-state" id="meState"></div>
+        <div class="me-queue" id="meQueue"></div>
       </div>
 
       <button class="btn-next" id="btnNext">下一位<small id="nextHint">叫 001 號</small></button>
 
-      <div class="actions">
-        <button class="btn" id="btnCall">叫指定號碼</button>
+      <div class="actions four">
+        <button class="btn" id="btnSkip">過號</button>
+        <button class="btn" id="btnCall">叫指定號</button>
         <button class="btn" id="btnBreak">休息</button>
         <button class="btn" id="btnUndo">↶ 退回</button>
+      </div>
+
+      <h2 class="section-title">等候名單 <small id="queueCount"></small></h2>
+      <div class="panel queue-panel">
+        <div class="queue" id="queue"></div>
+        <p class="hint" style="margin:10px 0 0">點號碼可以改指定、取消，或由你直接叫這號。</p>
+        <form class="inline sync" id="syncForm">
+          <input class="field" id="syncInput" type="number" inputmode="numeric" min="1" max="999" placeholder="機器發到幾號" aria-label="抽號機目前發到幾號" />
+          <button class="btn" type="submit">補號</button>
+        </form>
+        <button class="btn wide undo-issue" id="btnUndoIssue">取消最後加的一號</button>
       </div>
 
       <h2 class="section-title">現在客人要等多久？</h2>
@@ -97,6 +110,31 @@
       </div>
     </main>
   </section>
+
+  <!-- ===== 加號列：固定在畫面底部，隨時按得到 ===== -->
+  <div class="issuebar" id="issueBar" hidden>
+    <button class="issue-main" id="btnIssue">＋1 加號<small id="issueHint">發 001 號</small></button>
+    <button class="issue-pick" id="btnIssuePick">＋ 指定<small>設計師</small></button>
+  </div>
+
+  <!-- 指定設計師加號 -->
+  <dialog id="pickDialog" class="sheet">
+    <h2 id="pickTitle">加號：指定哪位設計師？</h2>
+    <div class="pick-grid" id="pickGrid"></div>
+    <button class="btn wide" type="button" id="pickCancel" style="margin-top:12px">取消</button>
+  </dialog>
+
+  <!-- 點等候名單的號碼 -->
+  <dialog id="ticketDialog" class="sheet">
+    <h2 id="ticketTitle"></h2>
+    <p class="hint">改成指定：</p>
+    <div class="pick-grid" id="assignGrid"></div>
+    <div class="dialog-actions">
+      <button class="btn" type="button" id="ticketCallMe">由我叫這號</button>
+      <button class="btn danger" type="button" id="ticketCancel">取消這號</button>
+    </div>
+    <button class="btn wide" type="button" id="ticketClose" style="margin-top:10px">關閉</button>
+  </dialog>
 
   <!-- ===== 店長設定 ===== -->
   <section id="ownerView" hidden>
@@ -182,6 +220,17 @@
       <div class="dialog-actions">
         <button class="btn" type="button" id="ownerCancel">取消</button>
         <button class="btn primary" value="ok">進入</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 確認（取代瀏覽器的 confirm，手機上比較好按） -->
+  <dialog id="askDialog">
+    <form method="dialog">
+      <h2 id="askText"></h2>
+      <div class="dialog-actions">
+        <button class="btn" value="no">取消</button>
+        <button class="btn primary" value="yes" id="askYes">確定</button>
       </div>
     </form>
   </dialog>

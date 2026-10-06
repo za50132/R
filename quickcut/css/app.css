@@ -143,6 +143,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .wait.long .wait-value { color: var(--warn); }
 .wait-ago { width: 100%; font-size: 12px; color: var(--muted); }
 
+/* ===== 查我的號碼 ===== */
+.myticket { margin-top: 10px; padding: 12px 14px; }
+.myticket .field { font-size: 18px; letter-spacing: .05em; padding: 10px; }
+.my-result:empty { display: none; }
+.my-result { margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--bg); font-size: 15px; }
+.my-result b { font-size: 20px; }
+.my-result.turn { background: #e5f6ec; color: #1f6b43; animation: bump .7s ease 2; }
+.my-result.muted { color: var(--ink-soft); }
+.dcard-queue { font-size: 12px; color: var(--teal-dark); font-weight: 700; margin-top: 2px; }
+
 /* ===== 現在人少 ===== */
 .quiet {
   display: flex; align-items: center; gap: 12px;
@@ -296,6 +306,54 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .others { margin-top: 6px; }
 .others .row-value { display: flex; justify-content: space-between; }
 
+/* 叫號列的四顆按鈕 */
+.actions.four { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.actions.four .btn { padding: 14px 2px; font-size: 14px; }
+.topbar-shop { text-align: right; line-height: 1.25; }
+.topbar-q { display: block; font-size: 12px; color: #b9c2c8; }
+.topbar-q b { color: #fff; }
+.me-queue { font-size: 13px; color: var(--teal-dark); font-weight: 700; margin-top: 2px; }
+
+/* 等候名單 */
+.section-title small { font-weight: 400; color: var(--muted); }
+.queue { display: flex; flex-wrap: wrap; gap: 8px; }
+.queue .empty { padding: 4px 0; }
+.qchip {
+  border: 0; border-radius: 12px; background: var(--bg); padding: 8px 10px; min-width: 64px;
+  display: flex; flex-direction: column; align-items: center; line-height: 1.2;
+}
+.qchip b { font-size: 20px; }
+.qchip small { font-size: 11px; color: var(--muted); }
+.qchip.mine { background: var(--teal-soft); outline: 2px solid var(--teal); }
+.qchip.mine small { color: var(--teal-dark); font-weight: 700; }
+.qchip.assigned small { color: var(--teal-dark); }
+.sync { margin-top: 12px; }
+.undo-issue { margin-top: 8px; font-size: 14px; color: var(--ink-soft); }
+
+/* 底部加號列 */
+#mainView main { padding-bottom: 120px; }
+.issuebar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: grid; grid-template-columns: 1fr 34%; gap: 10px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(243, 245, 245, .94); backdrop-filter: blur(8px);
+  border-top: 1px solid var(--line);
+}
+.issuebar button { border: 0; border-radius: 18px; font-weight: 900; touch-action: manipulation; }
+.issue-main { background: var(--ink); color: #fff; font-size: 24px; padding: 12px 4px; }
+.issue-pick { background: #fff; color: var(--ink); font-size: 18px; box-shadow: var(--shadow); }
+.issuebar small { display: block; font-size: 12px; font-weight: 500; opacity: .8; }
+.issue-main:active, .issue-pick:active { transform: translateY(2px); }
+
+/* 從下方滑出的選單 */
+dialog.sheet { margin: auto auto 0; width: 100%; max-width: 520px; border-radius: 22px 22px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+.pick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pick-grid .btn { padding: 18px 6px; font-size: 19px; background: var(--bg); box-shadow: none; }
+.pick-grid .btn small { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
+.pick-grid .btn.on { background: var(--teal); color: #fff; }
+.pick-grid .btn.on small { color: #e3f3f1; }
+.pick-grid .btn.none { grid-column: 1 / -1; }
+
 /* 等候時間評估 */
 .wait-panel { margin-top: 0; }
 .wait-now { margin: 0 0 12px; font-size: 14px; color: var(--ink-soft); }
@@ -327,6 +385,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   transition: opacity .2s, transform .2s; z-index: 50; max-width: calc(100% - 32px); text-align: center;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+/* 操作頁底部有加號列時，提示訊息顯示在它上面 */
+body:has(.issuebar:not([hidden])) .toast { bottom: calc(110px + env(safe-area-inset-bottom)); }
 .toast.bad { background: var(--danger); }
 
 /* 對話框 */

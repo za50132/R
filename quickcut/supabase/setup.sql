@@ -39,6 +39,24 @@ create table if not exists public.designers (
 -- 最後叫號時間：用來判斷設計師是否空檔中（「現在人少」提示）
 alter table public.designers add column if not exists called_at timestamptz;
 
+-- 今天抽號機發到幾號（老闆每按一次「加號」就 +1）
+alter table public.shops add column if not exists last_issued int not null default 0;
+
+-- 號碼牌：每一張號碼的指定設計師與狀態，也是「客人幾點到店」的紀錄
+create table if not exists public.tickets (
+  shop_id     text not null references public.shops(id) on delete cascade,
+  day         date not null,
+  number      int  not null,
+  designer_id text,                                    -- 指定設計師；null = 不指定
+  status      text not null default 'waiting'
+              check (status in ('waiting', 'serving', 'done', 'skipped', 'cancelled')),
+  served_by   text,                                    -- 實際剪的設計師
+  issued_at   timestamptz not null default now(),      -- 抽號（到店）時間
+  called_at   timestamptz,
+  finished_at timestamptz,
+  primary key (shop_id, day, number)
+);
+
 -- 當班人員評估的等候時間（分鐘）與評估時間
 alter table public.shops add column if not exists wait_minutes int;
 alter table public.shops add column if not exists wait_set_at  timestamptz;
@@ -81,13 +99,16 @@ alter table public.designers    enable row level security;
 alter table public.days_off     enable row level security;
 alter table public.call_log     enable row level security;  -- 沒有任何 policy = 外部完全讀不到
 alter table public.shop_secrets enable row level security;  -- 同上
+alter table public.tickets      enable row level security;
 
 drop policy if exists "public read" on public.shops;
 drop policy if exists "public read" on public.designers;
 drop policy if exists "public read" on public.days_off;
+drop policy if exists "public read" on public.tickets;
 create policy "public read" on public.shops     for select using (true);
 create policy "public read" on public.designers for select using (true);
 create policy "public read" on public.days_off  for select using (true);
+create policy "public read" on public.tickets   for select using (true);  -- 只有號碼和狀態，沒有個資
 
 -- ---------------------------------------------------------------------
 -- 內部小工具
@@ -99,7 +120,7 @@ language sql stable as $$ select (now() at time zone 'Asia/Taipei')::date $$;
 create or replace function public.qc_roll_day(p_shop text) returns void
 language plpgsql security definer set search_path = public as $$
 begin
-  update shops set day = qc_today(), last_called = 0, wait_minutes = null, wait_set_at = null, updated_at = now()
+  update shops set day = qc_today(), last_called = 0, last_issued = 0, wait_minutes = null, wait_set_at = null, updated_at = now()
    where id = p_shop and day <> qc_today();
   if found then
     update designers set current_number = null, called_at = null, status = 'working', updated_at = now()
@@ -148,8 +169,52 @@ language sql immutable as $$
 $$;
 
 -- ---------------------------------------------------------------------
--- 設計師操作（操作頁、Apple Watch 捷徑都呼叫這個）
---   p_action: ping / status / next / call / undo / break / back / toggle_break / set_wait
+-- 排隊小工具
+-- ---------------------------------------------------------------------
+-- 目前在等的人數（p_designer 有值 = 只算指定這位的）
+create or replace function public.qc_waiting(p_shop text, p_designer text default null) returns int
+language sql stable security definer set search_path = public as $$
+  select count(*)::int from tickets
+   where shop_id = p_shop and day = qc_today() and status = 'waiting'
+     and (p_designer is null or designer_id = p_designer)
+$$;
+
+-- 把號碼補到 p_upto（中間漏加的都當作「不指定」）
+create or replace function public.qc_fill_to(p_shop text, p_upto int) returns int
+language plpgsql security definer set search_path = public as $$
+declare from_n int;
+begin
+  -- 以「已發號碼」和「今天實際存在的最大號碼」較大者為準，資料不一致時也不會撞號
+  select greatest(s.last_issued, coalesce(max(t.number), 0)) + 1 into from_n
+    from shops s left join tickets t on t.shop_id = s.id and t.day = qc_today()
+   where s.id = p_shop group by s.last_issued;
+  if p_upto < from_n then return 0; end if;
+  insert into tickets (shop_id, day, number)
+  select p_shop, qc_today(), g from generate_series(from_n, p_upto) g
+  on conflict do nothing;
+  update shops set last_issued = p_upto, updated_at = now() where id = p_shop;
+  insert into call_log (shop_id, action, number, prev_last_called) values (p_shop, 'issue_to', p_upto, from_n - 1);
+  return p_upto - from_n + 1;
+end $$;
+
+-- ---------------------------------------------------------------------
+-- 店內操作（操作頁、Apple Watch 捷徑都呼叫這個）
+--
+--   加號（p_designer = 指定的設計師，不指定就留空）
+--     issue          加一號（客人在抽號機投幣後按一下）
+--     issue_to       補號到 p_number（漏按時，對齊抽號機）
+--     undo_issue     取消最後加的那一號（按錯時用）
+--     assign         把等候中的 p_number 改成指定 p_designer（留空 = 不指定）
+--     cancel_ticket  取消等候中的 p_number
+--
+--   叫號（p_designer = 按按鈕的設計師）
+--     next           剪完了，叫下一位：先叫「指定我」的，沒有再叫「不指定」的
+--     skip           過號：這位客人沒出現，直接叫下一位
+--     call           叫指定號碼 p_number（例如過號的客人回來了）
+--     undo           退回上一次叫號
+--     break / back / toggle_break   休息、回來
+--
+--   其他：ping / status / set_wait（p_number = 分鐘數）
 -- ---------------------------------------------------------------------
 create or replace function public.staff_action(
   p_shop     text,
@@ -160,12 +225,17 @@ create or replace function public.staff_action(
 ) returns json
 language plpgsql security definer set search_path = public as $$
 declare
-  err text;
-  s   shops;
-  d   designers;
-  l   call_log;
-  n   int;
-  msg text;
+  err   text;
+  s     shops;
+  d     designers;
+  t     tickets;
+  l     call_log;
+  n     int;
+  prev  int;
+  added int;
+  msg   text;
+  who   text;
+  today date := qc_today();
 begin
   err := qc_check_pin(p_shop, p_pin, false);
   if err is not null then return json_build_object('ok', false, 'message', err); end if;
@@ -178,14 +248,17 @@ begin
   end if;
 
   if p_action = 'status' then
-    select '目前叫號 ' || qc_fmt(s.last_called)
+    select '叫號 ' || qc_fmt(s.last_called) || '・已發 ' || qc_fmt(s.last_issued)
+           || '・等 ' || qc_waiting(p_shop) || ' 人'
            || case when s.wait_set_at > now() - interval '60 minutes'
-                   then E'\n等候 ' || qc_wait_text(s.wait_minutes) else '' end
+                   then E'\n預估 ' || qc_wait_text(s.wait_minutes) else '' end
            || coalesce(E'\n' || string_agg(
-             x.name || '：' || case when x.status = 'break' then '休息中' else qc_fmt(x.current_number) end,
-             E'\n' order by x.sort), '')
+                x.name || '：' || case when x.status = 'break' then '休息' else qc_fmt(x.current_number) end
+                || case when qc_waiting(p_shop, x.id) > 0 then '（指定等 ' || qc_waiting(p_shop, x.id) || '）' else '' end,
+                E'\n' order by x.sort), '')
       into msg from designers x where x.shop_id = p_shop;
-    return json_build_object('ok', true, 'message', msg, 'last_called', s.last_called);
+    return json_build_object('ok', true, 'message', msg, 'last_called', s.last_called,
+                             'last_issued', s.last_issued, 'waiting', qc_waiting(p_shop));
   end if;
 
   -- 當班人員評估等候時間（p_number = 分鐘數，0 = 免等）
@@ -200,57 +273,161 @@ begin
                              'message', '等候時間：' || qc_wait_text(p_number));
   end if;
 
+  -- ===== 加號 =====
+  if p_action in ('issue', 'assign') and p_designer is not null
+     and not exists (select 1 from designers where shop_id = p_shop and id = p_designer) then
+    return json_build_object('ok', false, 'message', '找不到這位設計師');
+  end if;
+  select name into who from designers where shop_id = p_shop and id = p_designer;
+
+  if p_action = 'issue' then
+    n := greatest(s.last_issued,
+                  coalesce((select max(number) from tickets where shop_id = p_shop and day = today), 0)) + 1;
+    if n > 999 then return json_build_object('ok', false, 'message', '號碼已到 999，請店長歸零'); end if;
+    insert into tickets (shop_id, day, number, designer_id) values (p_shop, today, n, p_designer);
+    update shops set last_issued = n, updated_at = now() where id = p_shop;
+    insert into call_log (shop_id, designer_id, action, number) values (p_shop, p_designer, 'issue', n);
+    return json_build_object('ok', true, 'number', n, 'waiting', qc_waiting(p_shop),
+      'message', '加號 ' || qc_fmt(n) || coalesce('（指定 ' || who || '）', '') || '・等 ' || qc_waiting(p_shop) || ' 人');
+
+  elsif p_action = 'issue_to' then
+    if p_number is null or p_number < 1 or p_number > 999 then
+      return json_build_object('ok', false, 'message', '請輸入 1～999 的號碼');
+    end if;
+    if p_number <= s.last_issued then
+      return json_build_object('ok', true, 'message', '已經發到 ' || qc_fmt(s.last_issued) || ' 號，不用補');
+    end if;
+    added := qc_fill_to(p_shop, p_number);
+    return json_build_object('ok', true, 'number', p_number, 'waiting', qc_waiting(p_shop),
+      'message', '已補到 ' || qc_fmt(p_number) || ' 號（新增 ' || added || ' 號）');
+
+  elsif p_action = 'undo_issue' then
+    delete from tickets where shop_id = p_shop and day = today and number = s.last_issued and status = 'waiting';
+    if not found then
+      return json_build_object('ok', false, 'message', '最後一號 ' || qc_fmt(s.last_issued) || ' 已經叫過，不能取消');
+    end if;
+    update shops set last_issued = s.last_issued - 1, updated_at = now() where id = p_shop;
+    insert into call_log (shop_id, action, number) values (p_shop, 'undo_issue', s.last_issued);
+    return json_build_object('ok', true, 'message', '已取消 ' || qc_fmt(s.last_issued) || ' 號');
+
+  elsif p_action in ('assign', 'cancel_ticket') then
+    select * into t from tickets where shop_id = p_shop and day = today and number = p_number for update;
+    if not found or t.status <> 'waiting' then
+      return json_build_object('ok', false, 'message', qc_fmt(p_number) || ' 號不在等候名單');
+    end if;
+    if p_action = 'assign' then
+      update tickets set designer_id = p_designer where shop_id = p_shop and day = today and number = p_number;
+      msg := qc_fmt(p_number) || ' 號改為' || coalesce('指定 ' || who, '不指定');
+    else
+      update tickets set status = 'cancelled', finished_at = now() where shop_id = p_shop and day = today and number = p_number;
+      msg := '已取消 ' || qc_fmt(p_number) || ' 號';
+    end if;
+    update shops set updated_at = now() where id = p_shop;
+    insert into call_log (shop_id, designer_id, action, number) values (p_shop, p_designer, p_action, p_number);
+    return json_build_object('ok', true, 'message', msg);
+  end if;
+
+  -- ===== 叫號（以下都需要知道是哪位設計師按的）=====
   select * into d from designers where shop_id = p_shop and id = p_designer for update;
   if not found then return json_build_object('ok', false, 'message', '找不到這位設計師'); end if;
+  prev := d.current_number;
 
-  if p_action = 'next' then
+  if p_action in ('next', 'skip') then
     -- 防止手錶連點：4 秒內重複按只算一次
-    if exists (select 1 from call_log
-                where shop_id = p_shop and designer_id = p_designer and action in ('next', 'call')
-                  and not undone and created_at > now() - interval '4 seconds'
-                  and created_at >= (qc_today()::timestamp at time zone 'Asia/Taipei')) then
-      return json_build_object('ok', true, 'number', d.current_number, 'last_called', s.last_called,
+    if p_action = 'next' and exists (
+         select 1 from call_log
+          where shop_id = p_shop and designer_id = p_designer and action in ('next', 'skip', 'call')
+            and not undone and created_at > now() - interval '4 seconds'
+            and created_at >= (today::timestamp at time zone 'Asia/Taipei')) then
+      return json_build_object('ok', true, 'number', d.current_number,
                                'message', '剛剛已叫 ' || qc_fmt(d.current_number) || ' 號');
     end if;
-    n := s.last_called + 1;
-    if n > 999 then return json_build_object('ok', false, 'message', '號碼已到 999，請店長修改號碼'); end if;
+
+    -- 手上這位：剪完（next）或沒出現（skip）
+    update tickets set status = case when p_action = 'skip' then 'skipped' else 'done' end, finished_at = now()
+     where shop_id = p_shop and day = today and served_by = p_designer and status = 'serving';
+
+    -- 先叫「指定我」的，沒有再叫「不指定」的，都照號碼順序
+    select number into n from tickets
+     where shop_id = p_shop and day = today and status = 'waiting' and designer_id = p_designer
+     order by number limit 1;
+    if n is null then
+      select number into n from tickets
+       where shop_id = p_shop and day = today and status = 'waiting' and designer_id is null
+       order by number limit 1;
+    end if;
+
     insert into call_log (shop_id, designer_id, action, number, prev_number, prev_last_called)
-    values (p_shop, p_designer, 'next', n, d.current_number, s.last_called);
+    values (p_shop, p_designer, p_action, n, prev, s.last_called);
+
+    if n is null then
+      update designers set current_number = null, called_at = now(), status = 'working', updated_at = now()
+       where shop_id = p_shop and id = p_designer;
+      update shops set updated_at = now() where id = p_shop;
+      return json_build_object('ok', true, 'number', null, 'waiting', 0,
+        'message', case when p_action = 'skip' then '已過號 ' || qc_fmt(prev) || '・' else '' end || '目前沒有人等候');
+    end if;
+
+    select * into t from tickets where shop_id = p_shop and day = today and number = n;
+    update tickets set status = 'serving', served_by = p_designer, called_at = now()
+     where shop_id = p_shop and day = today and number = n;
     update shops set last_called = n, updated_at = now() where id = p_shop;
     update designers set current_number = n, called_at = now(), status = 'working', updated_at = now()
      where shop_id = p_shop and id = p_designer;
-    return json_build_object('ok', true, 'number', n, 'last_called', n,
-                             'message', d.name || ' 叫號 ' || qc_fmt(n));
+    return json_build_object('ok', true, 'number', n, 'waiting', qc_waiting(p_shop),
+      'message', case when p_action = 'skip' then '過號・' else '' end
+                 || d.name || ' 叫 ' || qc_fmt(n) || case when t.designer_id is not null then '（指定）' else '' end
+                 || '・等 ' || qc_waiting(p_shop) || ' 人');
 
   elsif p_action = 'call' then
     if p_number is null or p_number < 1 or p_number > 999 then
       return json_build_object('ok', false, 'message', '請輸入 1～999 的號碼');
     end if;
+    if p_number > s.last_issued then perform qc_fill_to(p_shop, p_number); end if;
+    select * into t from tickets where shop_id = p_shop and day = today and number = p_number for update;
+    if t.status = 'serving' and t.served_by <> p_designer then
+      return json_build_object('ok', false, 'message', qc_fmt(p_number) || ' 號正在由 '
+        || (select name from designers where shop_id = p_shop and id = t.served_by) || ' 服務');
+    end if;
+    update tickets set status = 'done', finished_at = now()
+     where shop_id = p_shop and day = today and served_by = p_designer and status = 'serving' and number <> p_number;
+    update tickets set status = 'serving', served_by = p_designer, called_at = now(), finished_at = null
+     where shop_id = p_shop and day = today and number = p_number;
     insert into call_log (shop_id, designer_id, action, number, prev_number, prev_last_called)
-    values (p_shop, p_designer, 'call', p_number, d.current_number, s.last_called);
-    update shops set last_called = greatest(last_called, p_number), updated_at = now() where id = p_shop;
+    values (p_shop, p_designer, 'call', p_number, prev, s.last_called);
+    update shops set last_called = p_number, updated_at = now() where id = p_shop;
     update designers set current_number = p_number, called_at = now(), status = 'working', updated_at = now()
      where shop_id = p_shop and id = p_designer;
-    return json_build_object('ok', true, 'number', p_number, 'last_called', greatest(s.last_called, p_number),
-                             'message', d.name || ' 叫號 ' || qc_fmt(p_number));
+    return json_build_object('ok', true, 'number', p_number, 'waiting', qc_waiting(p_shop),
+                             'message', d.name || ' 叫 ' || qc_fmt(p_number));
 
   elsif p_action = 'undo' then
     select * into l from call_log
-     where shop_id = p_shop and designer_id = p_designer and action in ('next', 'call')
-       and not undone and created_at >= (qc_today()::timestamp at time zone 'Asia/Taipei')
+     where shop_id = p_shop and designer_id = p_designer and action in ('next', 'skip', 'call')
+       and not undone and created_at >= (today::timestamp at time zone 'Asia/Taipei')
      order by id desc limit 1 for update;
     if not found then return json_build_object('ok', false, 'message', '沒有可以退回的叫號'); end if;
     update call_log set undone = true where id = l.id;
+    -- 剛叫的那位回到等候名單；上一位回到「服務中」
+    if l.number is not null then
+      update tickets set status = 'waiting', served_by = null, called_at = null
+       where shop_id = p_shop and day = today and number = l.number and served_by = p_designer;
+    end if;
+    if l.prev_number is not null then
+      update tickets set status = 'serving', served_by = p_designer, finished_at = null
+       where shop_id = p_shop and day = today and number = l.prev_number and status in ('done', 'skipped');
+    end if;
     update designers
        set current_number = l.prev_number,
            called_at = (select max(created_at) from call_log
-                         where shop_id = p_shop and designer_id = p_designer and action in ('next', 'call')
-                           and not undone and created_at >= (qc_today()::timestamp at time zone 'Asia/Taipei')),
+                         where shop_id = p_shop and designer_id = p_designer and action in ('next', 'skip', 'call')
+                           and not undone and created_at >= (today::timestamp at time zone 'Asia/Taipei')),
            updated_at = now()
      where shop_id = p_shop and id = p_designer;
-    -- 只有在這之後沒人再叫號時，才把全店號碼一起退回
     if s.last_called = l.number then
       update shops set last_called = l.prev_last_called, updated_at = now() where id = p_shop;
+    else
+      update shops set updated_at = now() where id = p_shop;
     end if;
     return json_build_object('ok', true, 'number', l.prev_number,
                              'message', d.name || ' 已退回，目前 ' || qc_fmt(l.prev_number));
@@ -262,6 +439,7 @@ begin
     update designers set status = case when p_action = 'break' then 'break' else 'working' end,
                          updated_at = now()
      where shop_id = p_shop and id = p_designer;
+    update shops set updated_at = now() where id = p_shop;
     insert into call_log (shop_id, designer_id, action) values (p_shop, p_designer, p_action);
     return json_build_object('ok', true,
                              'message', d.name || case when p_action = 'break' then ' 休息中' else ' 回來上工' end);
@@ -318,7 +496,8 @@ begin
   elsif p_action = 'reset_today' then
     insert into call_log (shop_id, action, prev_last_called)
     select p_shop, 'reset', last_called from shops where id = p_shop;
-    update shops set last_called = 0, wait_minutes = null, wait_set_at = null, updated_at = now() where id = p_shop;
+    delete from tickets where shop_id = p_shop and day = qc_today();
+    update shops set last_called = 0, last_issued = 0, wait_minutes = null, wait_set_at = null, updated_at = now() where id = p_shop;
     update designers set current_number = null, called_at = null, status = 'working', updated_at = now() where shop_id = p_shop;
     return json_build_object('ok', true, 'message', '已歸零，下一位從 001 開始');
 
@@ -346,7 +525,7 @@ language sql stable security definer set search_path = public as $$
   with calls as (
     select created_at at time zone 'Asia/Taipei' as t
       from call_log
-     where shop_id = p_shop and action in ('next', 'call') and not undone
+     where shop_id = p_shop and action in ('next', 'skip', 'call') and number is not null and not undone
        and created_at >= now() - interval '56 days'
        and created_at < (qc_today()::timestamp at time zone 'Asia/Taipei')   -- 不含今天
   ),
@@ -368,6 +547,7 @@ $$;
 -- 內部工具不對外開放；只開放 staff_action / owner_action
 revoke execute on function public.qc_roll_day(text)                from public, anon, authenticated;
 revoke execute on function public.qc_check_pin(text, text, boolean) from public, anon, authenticated;
+revoke execute on function public.qc_fill_to(text, int)             from public, anon, authenticated;
 grant  execute on function public.staff_action(text, text, text, text, int) to anon, authenticated;
 grant  execute on function public.owner_action(text, text, text, text, date, int, text) to anon, authenticated;
 grant  execute on function public.crowd_stats(text) to anon, authenticated;
