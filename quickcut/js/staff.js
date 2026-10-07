@@ -387,7 +387,7 @@
     if (r.ok) { $('newOwnerPin').value = ''; ownerPin = pin; }
   });
 
-  // QR Code 與 Apple Watch 資料
+  // QR Code
   const customerUrl = new URL('./', location.href).href;
   $('customerUrl').textContent = customerUrl;
   $('btnCopyUrl').addEventListener('click', () => {
@@ -407,33 +407,12 @@
     $('qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   }
 
-  function renderWatch() {
-    if (store.mode !== 'supabase') {
-      $('watchInfo').innerHTML = '<p class="hint">設定好 Supabase 之後，這裡會顯示捷徑要貼的網址和內容。</p>';
-      return;
-    }
-    const body = (extra) => JSON.stringify({ p_shop: cfg.shopId, p_pin: '（店內密碼）', p_designer: 'jiang', ...extra });
-    $('watchInfo').innerHTML = `
-      <div class="kv">網址（URL）</div><div class="code">${esc(cfg.supabaseUrl.replace(/\/$/, ''))}/rest/v1/rpc/staff_action</div>
-      <div class="kv">方法</div><div class="code">POST</div>
-      <div class="kv">標頭（Headers）</div><div class="code">apikey: ${esc(cfg.supabaseKey)}\nContent-Type: application/json</div>
-      <div class="kv">加號（不指定）</div><div class="code">${esc(body({ p_action: 'issue', p_designer: null }))}</div>
-      <div class="kv">加號・指定設計師（p_designer 用「從選單中選擇」：jiang / chien / tim / katie）</div><div class="code">${esc(body({ p_action: 'issue', p_designer: 'tim' }))}</div>
-      <div class="kv">下一位</div><div class="code">${esc(body({ p_action: 'next' }))}</div>
-      <div class="kv">過號（叫下一位）</div><div class="code">${esc(body({ p_action: 'skip' }))}</div>
-      <div class="kv">叫指定號碼（p_number 用「要求輸入」的數字）</div><div class="code">${esc(body({ p_action: 'call', p_number: 25 }))}</div>
-      <div class="kv">休息／回來</div><div class="code">${esc(body({ p_action: 'toggle_break' }))}</div>
-      <div class="kv">退回上一位</div><div class="code">${esc(body({ p_action: 'undo' }))}</div>
-      <div class="kv">查詢目前狀態</div><div class="code">${esc(body({ p_action: 'status' }))}</div>`;
-  }
-
   function enterOwner() {
     show('ownerView');
     renderOffChips();
     renderCal();
     qrTries = 0;
     renderQr();
-    renderWatch();
   }
 
   // ---------- 資料同步 ----------

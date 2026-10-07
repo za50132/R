@@ -75,12 +75,11 @@ supabaseKey: '剛剛複製的 publishable / anon key',
 ### 第 4 步：店內設定
 
 1. 每位設計師用手機打開 `https://qingjin.netlify.app/staff.html`
-   - 輸入店內密碼 → 選自己的名字，之後打開就直接進入叫號畫面
+   - 輸入店內密碼，之後打開就直接進入叫號畫面
    - iPhone：Safari 分享 →「加入主畫面」，就會像 App 一樣
 2. 江江進「店長設定」：
    - **排休**：選設計師 → 點日期
    - **QR Code**：截圖或列印，貼在店門口、抽號機旁邊
-   - **Apple Watch 捷徑設定資料**：下一步要用
 
 ---
 
@@ -104,8 +103,8 @@ supabaseKey: '剛剛複製的 publishable / anon key',
 
 1. 右上角 **＋** 建立新捷徑，名稱改成「下一位」
 2. 加入動作，搜尋 **「取得 URL 內容」**
-3. URL 貼上：操作頁「店長設定 → Apple Watch 捷徑設定資料」裡的網址
-   （`https://xxxx.supabase.co/rest/v1/rpc/staff_action`）
+3. URL 貼上：`https://你的專案.supabase.co/rest/v1/rpc/staff_action`
+   （「你的專案」就是 `config.js` 裡 `supabaseUrl` 的那一段）
 4. 點「顯示更多」：
    - **方法**：`POST`
    - **標頭**：新增兩個
