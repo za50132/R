@@ -99,11 +99,18 @@
       return data;
     }
 
+    // 客人頁使用量：失敗也不影響畫面，所以不等結果、不報錯
+    function logView(kind, visitor, src) {
+      client.rpc('log_view', { p_shop: shopId, p_kind: kind, p_visitor: visitor, p_src: src || null })
+        .then(() => {}, () => {});
+    }
+
     return {
       mode: 'supabase',
       load,
       subscribe,
       crowdStats,
+      logView,
       staff: (pin, designer, action, number = null) =>
         rpc('staff_action', { p_shop: shopId, p_pin: pin, p_designer: designer, p_action: action, p_number: number }),
       owner: (pin, action, a = {}) =>
@@ -393,6 +400,7 @@
     return {
       mode: 'demo',
       crowdStats,
+      logView() { /* 示範模式不記錄 */ },
       load: async () => toState(read()),
       subscribe(onChange, onConn = () => {}) {
         listeners.add(onChange);

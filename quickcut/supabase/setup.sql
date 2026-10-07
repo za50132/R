@@ -575,6 +575,37 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
+-- ---------------------------------------------------------------------
+-- 客人頁使用量：只記錄「幾點有人開頁面／查號碼、是不是掃 QR Code 來的」，不記錄任何身分
+-- ---------------------------------------------------------------------
+create table if not exists public.page_views (
+  id         bigserial primary key,
+  shop_id    text not null,
+  day        date not null default (now() at time zone 'Asia/Taipei')::date,
+  kind       text not null check (kind in ('open', 'lookup')),   -- open = 打開客人頁；lookup = 查我的號碼
+  visitor    text not null,     -- 瀏覽器每天重新產生的隨機代號，只用來算「幾個人」，不是身分
+  src        text,              -- 從哪裡來：qr = 掃店門口的 QR Code
+  created_at timestamptz not null default now()
+);
+create index if not exists page_views_shop_day on public.page_views (shop_id, day);
+alter table public.page_views enable row level security;   -- 沒有任何 policy = 外部完全讀不到
+
+create or replace function public.log_view(p_shop text, p_kind text, p_visitor text, p_src text default null)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_kind is null or p_kind not in ('open', 'lookup') or p_visitor is null or length(p_visitor) > 40 then return; end if;
+  if not exists (select 1 from shops where id = p_shop) then return; end if;
+  -- 同一個人 10 分鐘內重複開只算一次
+  if exists (select 1 from page_views
+              where shop_id = p_shop and visitor = p_visitor and kind = p_kind
+                and created_at > now() - interval '10 minutes') then return; end if;
+  -- 每家店每天最多 2 萬筆，避免被惡意灌資料
+  if (select count(*) from page_views where shop_id = p_shop and day = qc_today()) >= 20000 then return; end if;
+  insert into page_views (shop_id, day, kind, visitor, src)
+  values (p_shop, qc_today(), p_kind, p_visitor, left(nullif(p_src, ''), 20));
+end $$;
+
 -- 內部工具不對外開放；只開放 staff_action / owner_action
 revoke execute on function public.qc_roll_day(text)                from public, anon, authenticated;
 revoke execute on function public.qc_check_pin(text, text, boolean) from public, anon, authenticated;
@@ -582,6 +613,7 @@ revoke execute on function public.qc_fill_to(text, int)             from public,
 grant  execute on function public.staff_action(text, text, text, text, int) to anon, authenticated;
 grant  execute on function public.owner_action(text, text, text, text, date, int, text) to anon, authenticated;
 grant  execute on function public.crowd_stats(text) to anon, authenticated;
+grant  execute on function public.log_view(text, text, text, text) to anon, authenticated;
 
 -- ---------------------------------------------------------------------
 -- 即時同步：這三張表有變動時，客人頁會立刻更新

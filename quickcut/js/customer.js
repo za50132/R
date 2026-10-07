@@ -99,6 +99,22 @@
     $('offList').innerHTML = rows.length ? rows.join('') : '<li class="empty">未來兩週設計師都有上班</li>';
   }
 
+  // ===== 客人頁使用量（匿名）=====
+  // 每台手機每天一個隨機代號，只用來算「幾個人」，隔天就換，不能追蹤到人
+  function visitorId() {
+    const today = taipeiNow().date;
+    try {
+      const v = JSON.parse(localStorage.getItem('qc-vid'));
+      if (v && v.day === today) return v.id;
+    } catch (e) { /* 無痕視窗 */ }
+    const id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    try { localStorage.setItem('qc-vid', JSON.stringify({ day: today, id })); } catch (e) { /* 無痕視窗 */ }
+    return id;
+  }
+  const SRC = (() => { try { return new URLSearchParams(location.search).get('src'); } catch (e) { return null; } })();
+  const logView = (kind) => { try { store.logView(kind, visitorId(), SRC); } catch (e) { /* 不影響畫面 */ } };
+  logView('open');
+
   // ===== 查我的號碼 =====
   const MINE_KEY = `qc-mine-${cfg.shopId}`;
   let mine = null;     // { day, number }
@@ -111,6 +127,7 @@
     if (!(n >= 1 && n <= 999)) return;
     mine = { day: taipeiNow().date, number: n };
     lastMineKind = null;
+    logView('lookup');
     try { localStorage.setItem(MINE_KEY, JSON.stringify(mine)); } catch (err) { /* 私密瀏覽 */ }
     $('myNum').blur();
     render();

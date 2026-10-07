@@ -389,6 +389,8 @@
 
   // QR Code
   const customerUrl = new URL('./', location.href).href;
+  // QR Code 多帶 ?src=qr，才算得出有多少人是掃門口 QR Code 進來的
+  const qrUrl = `${customerUrl}?src=qr`;
   $('customerUrl').textContent = customerUrl;
   $('btnCopyUrl').addEventListener('click', () => {
     navigator.clipboard?.writeText(customerUrl).then(() => toast('已複製網址'), () => toast('請長按網址手動複製', true));
@@ -402,7 +404,7 @@
       return;
     }
     const qr = window.qrcode(0, 'M');
-    qr.addData(customerUrl);
+    qr.addData(qrUrl);
     qr.make();
     $('qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   }
