@@ -1,7 +1,7 @@
 /* 客人頁 */
 (function () {
   const cfg = window.QC_CONFIG;
-  const { store, pad3, esc, taipeiNow, shopStatus, designerView, freeDesigners, waitInfo, waitText, agoText, addDays, shortDate,
+  const { store, pad3, esc, taipeiNow, shopStatus, designerView, freeDesigners, waitInfo, waitText, addDays, shortDate,
     waitingTickets, estimateWait, ticketInfo } = window.QC;
   const $ = (id) => document.getElementById(id);
 
@@ -76,7 +76,6 @@
     $('wait').hidden = minutes == null;
     if (minutes != null) {
       $('waitValue').textContent = waitText(minutes);
-      $('waitAgo').textContent = manual ? `店內人員評估・${agoText(w.ago)}` : `依目前等候 ${waitingCount} 人估算（不指定設計師）`;
       $('wait').classList.toggle('short', minutes <= 10);
       $('wait').classList.toggle('long', minutes >= 30);
     }

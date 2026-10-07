@@ -103,6 +103,7 @@
   .tile:active { transform: scale(.96); }
   .t-issue { background: #3b4246; } .t-pick { background: #2f7d74; } .t-next { background: #2c9a5d; }
   .t-skip { background: #c56d1c; } .t-wait { background: #5b5fc7; } .t-status { background: #59626a; }
+  .w-grid .t-status { grid-column: 1 / -1; min-height: 44px; }
   .w-list { display: grid; gap: 6px; overflow-y: auto; scrollbar-width: none; }
   .w-list button { border: 0; border-radius: 12px; background: #2a2f33; color: #fff; font: inherit; font-weight: 700; padding: 9px 12px; text-align: left; cursor: pointer; }
   .w-list button small { color: #9aa6ad; font-weight: 400; margin-left: 4px; }
@@ -238,7 +239,6 @@
           <button class="tile t-pick" data-do="pick"><i>＋</i>指定加號</button>
           <button class="tile t-next" data-do="next"><i>▶</i>下一位</button>
           <button class="tile t-skip" data-do="skip"><i>⤼</i>過號</button>
-          <button class="tile t-wait" data-do="wait"><i>⏱</i>等候時間</button>
           <button class="tile t-status" data-do="status"><i>≡</i>目前狀態</button>
         </div>`;
     }
