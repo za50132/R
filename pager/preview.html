@@ -1,0 +1,286 @@
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>請進叫號簡單版預覽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<style>
+  /* 版面：店門口招牌色的頂部說明列 → 兩支手機＋一支手錶並排（手機寬度時改成分頁切換） */
+  :root {
+    --bg: #eef2f1;          /* 店內磨石地板般的淡灰綠 */
+    --surface: #ffffff;
+    --ink: #22272b;
+    --ink-soft: #59626a;
+    --line: #d9e0df;
+    --teal: #5fb4aa;        /* 招牌湖水綠 */
+    --teal-ink: #2f7d74;
+    --wood: #b07a4f;        /* 招牌下緣的木頭色 */
+    --bezel: #1b1e21;
+    --watch-bg: #000000;
+    --watch-fg: #f4f6f6;
+    --font: 'Noto Sans TC', -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151a1a; --surface: #1f2626; --ink: #e8eeed; --ink-soft: #a3b0ae; --line: #2f3a39;
+      --teal: #6cc2b8; --teal-ink: #8fd6cd; --wood: #c58f63; --bezel: #050606;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151a1a; --surface: #1f2626; --ink: #e8eeed; --ink-soft: #a3b0ae; --line: #2f3a39;
+    --teal: #6cc2b8; --teal-ink: #8fd6cd; --wood: #c58f63; --bezel: #050606;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); line-height: 1.55; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  header.intro { display: grid; gap: 14px; }
+  .brand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .brand-sign {
+    display: inline-flex; align-items: stretch; border-radius: 10px; overflow: hidden;
+    border-bottom: 4px solid var(--wood); background: #fff; color: #22272b; font-weight: 900;
+  }
+  .brand-sign span { padding: 6px 12px; letter-spacing: .12em; }
+  .brand-sign span + span { background: var(--teal); color: #1f2a2c; border-radius: 18px 0 0 18px / 50% 0 0 50%; letter-spacing: .06em; }
+  h1 { font-size: clamp(22px, 4vw, 30px); margin: 0; text-wrap: balance; font-weight: 900; }
+  .lede { margin: 0; color: var(--ink-soft); max-width: 62ch; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .controls button, .controls select {
+    font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer;
+  }
+  .controls button.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .controls label { font-size: 13px; color: var(--ink-soft); display: inline-flex; gap: 6px; align-items: center; }
+  :is(button, select, a):focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+  .try { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: s; }
+  .try li { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 10px 42px; position: relative; font-size: 14px; min-width: 0; }
+  .try li::before {
+    content: counter(s); position: absolute; left: 12px; top: 10px; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--teal); color: #102522; font-weight: 900; font-size: 13px; display: grid; place-items: center;
+  }
+  .try b { color: var(--teal-ink); }
+
+  .tabs { display: none; }
+  .stage { display: grid; grid-template-columns: repeat(3, auto); justify-content: center; gap: 28px; margin-top: 22px; align-items: start; }
+  .device { display: grid; gap: 10px; justify-items: center; min-width: 0; }
+  .device h2 { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink-soft); letter-spacing: .04em; }
+  .device h2 small { display: block; font-size: 12px; font-weight: 400; }
+
+  .phone {
+    width: 360px; max-width: 100%; height: 740px; border-radius: 44px; padding: 12px; background: var(--bezel);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .25);
+  }
+  .phone iframe { width: 100%; height: 100%; border: 0; border-radius: 32px; background: #f3f5f5; display: block; }
+
+  /* Apple Watch：捷徑 App 的磚塊按鈕 */
+  .watch-wrap { display: grid; justify-items: center; gap: 14px; padding-top: 40px; }
+  .watch {
+    width: 216px; height: 262px; border-radius: 58px; background: var(--bezel); padding: 14px; position: relative;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .3);
+  }
+  .watch::before, .watch::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); width: 120px; height: 46px; background: #3a4043; z-index: -1; }
+  .watch::before { top: -40px; border-radius: 20px 20px 0 0; }
+  .watch::after { bottom: -40px; border-radius: 0 0 20px 20px; }
+  .crown { position: absolute; right: -8px; top: 70px; width: 10px; height: 34px; border-radius: 4px; background: #4a5154; }
+  .screen {
+    width: 100%; height: 100%; border-radius: 44px; background: var(--watch-bg); color: var(--watch-fg);
+    overflow: hidden; display: flex; flex-direction: column; padding: 12px 12px 10px; font-size: 13px;
+  }
+  .w-top { display: flex; justify-content: space-between; align-items: baseline; padding: 0 6px 8px; }
+  .w-top b { font-size: 14px; color: #6cc2b8; }
+  .w-top span { font-size: 13px; color: #b9c2c8; font-variant-numeric: tabular-nums; }
+  .w-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; overflow-y: auto; scrollbar-width: none; }
+  .tile {
+    border: 0; border-radius: 14px; padding: 10px 8px; min-height: 58px; text-align: left; color: #fff;
+    font: inherit; font-weight: 700; font-size: 14px; line-height: 1.2; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .tile i { font-style: normal; font-size: 16px; }
+  .tile:active { transform: scale(.96); }
+  .t-issue { background: #3b4246; } .t-pick { background: #2f7d74; } .t-next { background: #2c9a5d; }
+  .t-skip { background: #c56d1c; } .t-wait { background: #5b5fc7; } .t-status { background: #59626a; }
+  .w-pad-num { text-align: center; font-size: 30px; font-weight: 900; font-variant-numeric: tabular-nums; padding: 0 0 4px; }
+  .w-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .w-pad button { border: 0; border-radius: 10px; background: #2a2f33; color: #fff; font: inherit; font-weight: 700; font-size: 15px; padding: 5px 0; cursor: pointer; }
+  .w-pad .go { background: #2c9a5d; }
+  .w-list { display: grid; gap: 6px; overflow-y: auto; scrollbar-width: none; }
+  .w-list button { border: 0; border-radius: 12px; background: #2a2f33; color: #fff; font: inherit; font-weight: 700; padding: 9px 12px; text-align: left; cursor: pointer; }
+  .w-list button small { color: #9aa6ad; font-weight: 400; margin-left: 4px; }
+  .w-title { font-weight: 700; padding: 0 6px 6px; color: #b9c2c8; font-size: 12px; }
+  .w-result { flex: 1; display: grid; align-content: center; gap: 10px; padding: 0 6px; text-align: center; overflow-y: auto; scrollbar-width: none; }
+  .w-result .ok { width: 34px; height: 34px; border-radius: 50%; background: #2c9a5d; display: grid; place-items: center; margin: 0 auto; font-weight: 900; }
+  .w-result .ok.bad { background: #c0453f; }
+  .w-result p { margin: 0; font-size: 14px; font-weight: 700; white-space: pre-line; }
+  .w-result button { border: 0; border-radius: 999px; background: #2a2f33; color: #fff; font: inherit; padding: 6px; cursor: pointer; }
+  .watch-note { font-size: 13px; color: var(--ink-soft); max-width: 260px; text-align: center; margin: 54px 0 0; }
+
+  @media (max-width: 1180px) {
+    .stage { grid-template-columns: repeat(2, auto); }
+  }
+  @media (max-width: 820px) {
+    .tabs {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 18px; padding: 4px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+      position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+    }
+    .tabs button { font: inherit; font-size: 14px; font-weight: 700; border: 0; border-radius: 10px; padding: 9px 4px; background: transparent; color: var(--ink-soft); cursor: pointer; }
+    .tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+    .stage { grid-template-columns: 1fr; margin-top: 14px; }
+    .device[data-hidden="true"] { display: none; }
+    .device h2 { display: none; }
+    .phone { width: 100%; height: 76vh; min-height: 560px; border-radius: 34px; padding: 8px; }
+    .phone iframe { border-radius: 26px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tile:active { transform: none; } }
+</style>
+
+<div class="page">
+  <header class="intro">
+    <div class="brand">
+      <div class="brand-sign" aria-hidden="true"><span>請進</span><span>$120 佰二剪髮</span></div>
+    </div>
+    <h1>線上叫號・簡單版 預覽</h1>
+    <p class="lede">這是示範版，三個畫面是連動的。網路上只會存「現在叫到幾號」和「預估等待時間」，叫號是直接覆蓋，不留任何紀錄，也不顯示來客人數。資料只存在這個瀏覽器裡，可以放心亂按。</p>
+    <div class="controls">
+      <button class="primary" id="seedBtn" type="button">載入範例：叫到 012、客人拿 015</button>
+      <button id="resetBtn" type="button">清空，從頭開始</button>
+      <label for="timeSel">模擬時間
+        <select id="timeSel">
+          <option value="10:00">早上 10:00</option>
+          <option value="15:00" selected>下午 3:00</option>
+          <option value="19:30">晚上 7:30</option>
+          <option value="23:00">晚上 11:00（打烊）</option>
+        </select>
+      </label>
+    </div>
+    <ol class="try">
+      <li>客人拿到號碼牌，掃 QR Code 後<b>輸入自己的號碼</b>，手機就可以先放著。</li>
+      <li>老闆在叫號頁按<b>「下一位」</b>。指定設計師或過號的客人，就用<b>「輸入號碼叫號」</b>。</li>
+      <li>叫到客人號碼的前 2 號，客人手機會先提醒「快輪到您了」，輪到時會響鈴、畫面變綠色。</li>
+      <li>老闆點一下<b>預估等待時間</b>（免等、10、20…分鐘），客人頁就會顯示；超過 1 小時沒更新會自動隱藏。</li>
+    </ol>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="切換畫面">
+    <button role="tab" aria-selected="true" data-tab="customer" type="button">客人看到的</button>
+    <button role="tab" aria-selected="false" data-tab="staff" type="button">老闆叫號</button>
+    <button role="tab" aria-selected="false" data-tab="watch" type="button">Apple Watch</button>
+  </nav>
+
+  <main class="stage">
+    <section class="device" data-dev="customer">
+      <h2>客人的手機<small>掃店門口 QR Code，輸入號碼 015</small></h2>
+      <div class="phone"><iframe id="custFrame" title="客人看到的畫面" loading="eager"></iframe></div>
+    </section>
+    <section class="device" data-dev="staff">
+      <h2>老闆的手機<small>叫號頁（密碼 111111）</small></h2>
+      <div class="phone"><iframe id="staffFrame" title="老闆叫號頁" loading="eager"></iframe></div>
+    </section>
+    <section class="device" data-dev="watch">
+      <h2>老闆的 Apple Watch<small>iPhone「捷徑」App 做的按鈕</small></h2>
+      <div class="watch-wrap">
+        <div class="watch" aria-label="Apple Watch 模擬">
+          <span class="crown" aria-hidden="true"></span>
+          <div class="screen" id="screen"></div>
+        </div>
+        <p class="watch-note">實際用法：手錶錶面放「捷徑」複雜功能，抬手點一下就送出；也可以說「嘿 Siri，下一位」。</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="config.js"></script>
+<script src="js/pager.js"></script>
+<script>
+  (function () {
+    const PAGES = { customer: 'index.html', staff: 'staff.html' };
+    const PIN = '111111';
+    const { cfg, store, esc, taipeiNow, pad3 } = window.PG;
+    const $ = (id) => document.getElementById(id);
+    let time = '15:00';
+    const save = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 無痕視窗 */ } };
+
+    function loadFrames() {
+      try { localStorage.setItem(`pg-staff-${cfg.shopId}`, PIN); } catch (e) { /* 無痕視窗 */ }
+      $('custFrame').src = `${PAGES.customer}?t=${time}`;
+      $('staffFrame').src = `${PAGES.staff}?t=${time}`;
+    }
+    function seed() {
+      store.demoSet(12, 20);
+      save(`pg-mine-${cfg.shopId}`, { day: taipeiNow().date, number: 15 });
+    }
+
+    $('seedBtn').addEventListener('click', () => { seed(); loadFrames(); });
+    $('resetBtn').addEventListener('click', () => { store.demoReset(); save(`pg-mine-${cfg.shopId}`, null); loadFrames(); });
+    $('timeSel').addEventListener('change', (e) => { time = e.target.value; loadFrames(); });
+
+    const tabs = document.querySelectorAll('.tabs [data-tab]');
+    function pick(tab) {
+      tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === tab)));
+      document.querySelectorAll('.device').forEach((d) => { d.dataset.hidden = String(d.dataset.dev !== tab); });
+    }
+    tabs.forEach((t) => t.addEventListener('click', () => pick(t.dataset.tab)));
+    pick('customer');
+
+    // ===== Apple Watch 模擬 =====
+    const screen = $('screen');
+    let backTimer, mode = null, typed = '';
+    function home() {
+      clearTimeout(backTimer); mode = null;
+      screen.innerHTML = `
+        <div class="w-top"><b>捷徑</b><span>${time}</span></div>
+        <div class="w-grid">
+          <button class="tile t-next" data-do="next"><i>▶</i>下一位</button>
+          <button class="tile t-pick" data-do="pad"><i>#</i>輸入號碼</button>
+          <button class="tile t-wait" data-do="wait"><i>⏱</i>等待時間</button>
+          <button class="tile t-status" data-do="undo"><i>↶</i>退回</button>
+        </div>`;
+    }
+    function padScreen() {
+      mode = 'pad';
+      screen.innerHTML = `<div class="w-pad-num">${typed ? typed.padStart(3, '0') : '---'}</div><div class="w-pad">
+        ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-k="${n}">${n}</button>`).join('')}
+        <button data-k="back">取消</button><button data-k="0">0</button><button data-k="ok" class="go">叫號</button></div>`;
+    }
+    function waitScreen() {
+      mode = 'wait';
+      screen.innerHTML = `<div class="w-title">現在要等多久？</div><div class="w-list">${(cfg.waitOptions || [0, 10, 20, 30, 45, 60]).map((n) =>
+        `<button data-val="${n}">${n === 0 ? '免等' : n >= 60 ? '60 分鐘以上' : `${n} 分鐘`}</button>`).join('')}
+        <button data-val="__back">取消</button></div>`;
+    }
+    function result(r) {
+      mode = null;
+      screen.innerHTML = `<div class="w-result"><div class="ok ${r.ok ? '' : 'bad'}">${r.ok ? '✓' : '!'}</div>
+        <p>${esc(r.message)}</p><button data-do="home">完成</button></div>`;
+      clearTimeout(backTimer);
+      backTimer = setTimeout(home, 5000);
+    }
+    screen.addEventListener('click', async (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      if (b.dataset.do === 'home' || b.dataset.val === '__back' || b.dataset.k === 'back') { home(); return; }
+      if (mode === 'pad' && b.dataset.k) {
+        if (b.dataset.k === 'ok') { const n = parseInt(typed, 10); typed = ''; if (n) result(await store.act(PIN, 'call', n)); else home(); return; }
+        if (typed.length < 3) typed = (typed + b.dataset.k).replace(/^0+/, '');
+        padScreen(); return;
+      }
+      if (mode === 'wait' && b.dataset.val !== undefined) { result(await store.act(PIN, 'set_wait', Number(b.dataset.val))); return; }
+      const act = b.dataset.do;
+      if (act === 'next') result(await store.act(PIN, 'next'));
+      else if (act === 'undo') result(await store.act(PIN, 'undo'));
+      else if (act === 'pad') { typed = ''; padScreen(); }
+      else if (act === 'wait') waitScreen();
+    });
+
+    // 第一次打開就是有客人在等的樣子
+    store.load().then((s) => {
+      if (!s.current) seed();
+      loadFrames();
+      home();
+    }).catch(() => { loadFrames(); home(); });
+  })();
+</script>

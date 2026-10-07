@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>請進 快剪｜線上叫號</title>
+  <meta name="description" content="請進 $120 佰二剪髮 — 輸入號碼牌號碼，輪到您時手機提醒。新北市永和區永平路180巷1號1F" />
+  <meta name="theme-color" content="#5fb4aa" />
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="img/icon-180.png" />
+  <meta name="apple-mobile-web-app-title" content="請進叫號" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script src="config.js"></script>
+  <script>
+    if (PG_CONFIG.supabaseUrl) document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
+  </script>
+</head>
+<body>
+  <div class="demo-banner" id="demoBanner" hidden>示範模式：資料只存在這台電腦。用同一個瀏覽器另開「叫號頁」就能試。</div>
+
+  <main class="wrap">
+    <header class="sign" aria-label="請進 PLEASE COME IN ｜ $120 佰二剪髮">
+      <div class="sign-left">
+        <img class="sign-mark" src="img/mark.svg" alt="" />
+        <div>
+          <div class="sign-name">請進</div>
+          <div class="sign-en">PLEASE COME IN</div>
+        </div>
+      </div>
+      <div class="sign-right">
+        <span class="sign-price num">$120</span>
+        <span class="sign-word">佰二剪髮</span>
+      </div>
+    </header>
+
+    <div class="statusbar">
+      <span class="pill"><span class="dot" id="openDot"></span><span id="openLabel">營業中</span></span>
+      <span class="live" id="live"><span class="dot"></span><span id="liveLabel">連線中…</span></span>
+    </div>
+
+    <section class="hero" aria-live="polite">
+      <div class="hero-label">目前叫號</div>
+      <div class="hero-num num" id="heroNum">---</div>
+      <div class="hero-sub" id="heroSub">請對照您的號碼牌</div>
+      <div class="wait" id="wait" hidden>
+        <span class="wait-label">預估等待</span>
+        <span class="wait-value" id="waitValue"></span>
+        <small class="wait-ago" id="waitAgo"></small>
+      </div>
+    </section>
+
+    <!-- 我的號碼：輪到時提醒 -->
+    <section class="mine" id="mine">
+      <form id="mineForm" class="mine-form">
+        <label for="mineInput">輸入您的號碼牌，輪到時提醒您</label>
+        <div class="inline">
+          <input class="field" id="mineInput" type="number" inputmode="numeric" min="1" max="999" placeholder="例：23" />
+          <button class="btn primary" type="submit">提醒我</button>
+        </div>
+      </form>
+      <div class="mine-card" id="mineCard" hidden>
+        <div class="mine-top">
+          <span>我的號碼</span>
+          <button class="mine-clear" id="mineClear" type="button">換號碼</button>
+        </div>
+        <div class="mine-num num" id="mineNum"></div>
+        <div class="mine-msg" id="mineMsg"></div>
+        <p class="mine-tip" id="mineTip">請讓這個畫面保持開著，輪到您時會響鈴提醒。</p>
+      </div>
+    </section>
+
+    <h2 class="section-title">店家資訊</h2>
+    <section class="card">
+      <div class="row">
+        <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <div class="row-main"><div class="row-label">營業時間</div><div class="row-value" id="hours"></div></div>
+      </div>
+      <a class="row" id="mapLink" target="_blank" rel="noopener">
+        <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.3 7-12a7 7 0 10-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <div class="row-main"><div class="row-label">地址（開啟地圖）</div><div class="row-value" id="address"></div></div>
+        <span class="row-go">›</span>
+      </a>
+      <a class="row" id="telLink">
+        <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>
+        <div class="row-main"><div class="row-label">電話</div><div class="row-value num" id="phone"></div></div>
+        <span class="row-go">›</span>
+      </a>
+    </section>
+
+    <p class="foot">畫面會自動更新，不用重新整理<br />小技巧：分享 →「加入主畫面」，下次一點就開</p>
+  </main>
+
+  <script src="js/pager.js"></script>
+  <script src="js/customer.js"></script>
+</body>
+</html>

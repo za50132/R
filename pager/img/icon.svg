@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#5fb4aa"/>
+  <rect x="48" y="48" width="416" height="416" rx="64" fill="#fff"/>
+  <path d="M100 200V100h100" fill="none" stroke="#5fb4aa" stroke-width="28"/>
+  <path d="M412 312v100H312" fill="none" stroke="#5fb4aa" stroke-width="28"/>
+  <text x="256" y="304" text-anchor="middle" font-family="Noto Sans TC, PingFang TC, sans-serif" font-weight="900" font-size="128" fill="#2a2e33">請進</text>
+</svg>

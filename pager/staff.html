@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>請進 叫號</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#2a2e33" />
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="img/icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="請進叫號" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script src="config.js"></script>
+  <script>
+    if (PG_CONFIG.supabaseUrl) document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
+</head>
+<body>
+  <div class="demo-banner" id="demoBanner" hidden>示範模式・密碼 111111</div>
+
+  <!-- ===== 登入 ===== -->
+  <section class="login" id="loginView" hidden>
+    <header class="sign">
+      <div class="sign-left">
+        <img class="sign-mark" src="img/mark.svg" alt="" />
+        <div><div class="sign-name">請進</div><div class="sign-en">PLEASE COME IN</div></div>
+      </div>
+      <div class="sign-right"><span class="sign-word">叫號</span></div>
+    </header>
+    <h1>輸入密碼</h1>
+    <p>第一次使用才需要輸入，之後這支手機會記住。</p>
+    <form id="pinForm">
+      <input class="field" id="pinInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••" aria-label="密碼" />
+      <div class="err" id="pinErr"></div>
+      <button class="btn primary wide" type="submit">進入</button>
+    </form>
+  </section>
+
+  <!-- ===== 叫號 ===== -->
+  <section id="mainView" hidden>
+    <div class="topbar">
+      <div class="topbar-title">請進<small>叫號</small></div>
+      <a class="topbar-link" href="index.html" target="_blank" rel="noopener">客人看到的 ›</a>
+    </div>
+
+    <main class="wrap">
+      <div class="me">
+        <div class="me-name">目前叫號</div>
+        <div class="me-num num" id="curNum">---</div>
+      </div>
+
+      <button class="btn-next" id="btnNext">下一位<small id="nextHint">叫 001 號</small></button>
+
+      <div class="actions two">
+        <button class="btn" id="btnCall">輸入號碼叫號</button>
+        <button class="btn" id="btnUndo">↶ 退回</button>
+      </div>
+
+      <h2 class="section-title">預估等待時間</h2>
+      <div class="panel wait-panel">
+        <p class="wait-now" id="waitNow"></p>
+        <div class="wait-grid" id="waitGrid"></div>
+      </div>
+
+      <h2 class="section-title">設定</h2>
+      <div class="panel">
+        <h3>客人頁 QR Code</h3>
+        <p class="hint">印出來貼在店門口、抽號機旁邊。</p>
+        <div class="qr" id="qr"></div>
+        <div class="code" id="customerUrl"></div>
+        <button class="btn wide" id="btnCopyUrl">複製網址</button>
+      </div>
+      <div class="panel" id="watchPanel">
+        <h3>Apple Watch 捷徑設定資料</h3>
+        <p class="hint">照著 README 的教學，在 iPhone「捷徑」App 建立。</p>
+        <div id="watchInfo"></div>
+      </div>
+      <div class="panel">
+        <h3>修改密碼</h3>
+        <p class="hint">6～12 位數字。改了之後，其他手機和 Apple Watch 捷徑都要換成新密碼。</p>
+        <form class="inline" id="pinChangeForm">
+          <input class="field" id="newPin" type="password" inputmode="numeric" placeholder="新密碼" aria-label="新密碼" />
+          <button class="btn primary" type="submit">更新</button>
+        </form>
+      </div>
+      <button class="btn wide danger" id="btnLogout" style="margin-top:14px">登出這支手機</button>
+    </main>
+  </section>
+
+  <!-- 輸入號碼叫號：大數字鍵盤 -->
+  <dialog id="callDialog" class="sheet">
+    <h2>輸入號碼叫號</h2>
+    <div class="pad-display num" id="padDisplay">---</div>
+    <div class="pad" id="pad">
+      <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+      <button type="button" data-k="del" class="pad-del">刪除</button><button type="button" data-k="0">0</button><button type="button" data-k="ok" class="pad-ok">叫號</button>
+    </div>
+    <button class="btn wide" type="button" id="callCancel" style="margin-top:10px">取消</button>
+  </dialog>
+
+  <!-- 確認（取代瀏覽器的 confirm） -->
+  <dialog id="askDialog">
+    <form method="dialog">
+      <h2 id="askText"></h2>
+      <div class="dialog-actions">
+        <button class="btn" value="no">取消</button>
+        <button class="btn primary" value="yes" id="askYes">確定</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/pager.js"></script>
+  <script src="js/staff.js"></script>
+</body>
+</html>

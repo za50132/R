@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true">
+  <!-- 招牌左邊的框線＋理髮人像 -->
+  <path d="M3 37V3h16" fill="none" stroke="#5fb4aa" stroke-width="4" stroke-linecap="square"/>
+  <path d="M37 21v16H21" fill="none" stroke="#5fb4aa" stroke-width="4" stroke-linecap="square"/>
+  <circle cx="21" cy="15" r="6" fill="#2a2e33"/>
+  <path d="M10 33c1.5-7 6-10 11-10s9.5 3 11 10z" fill="#2a2e33"/>
+  <path d="M15 12c2-4 9-5 12 0" fill="none" stroke="#2a2e33" stroke-width="3" stroke-linecap="round"/>
+</svg>
