@@ -39,15 +39,10 @@
       <form id="pinForm">
         <input class="field" id="pinInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••" aria-label="店內密碼" />
         <div class="err" id="pinErr"></div>
-        <button class="btn primary wide" type="submit">下一步</button>
+        <button class="btn primary wide" type="submit">進入</button>
       </form>
     </div>
 
-    <div id="whoStep" hidden>
-      <h1>你是哪一位？</h1>
-      <p>之後打開就會直接進入你的叫號畫面。</p>
-      <div class="who" id="whoList"></div>
-    </div>
   </section>
 
   <!-- ===== 叫號 ===== -->
@@ -58,28 +53,13 @@
     </div>
 
     <main class="wrap">
-      <div class="chips" id="chips" role="tablist" aria-label="切換設計師"></div>
-
-      <div class="me" id="meCard">
-        <div class="me-name" id="meName"></div>
-        <div class="me-num num" id="meNum">---</div>
-        <div class="me-state" id="meState"></div>
-        <div class="me-queue" id="meQueue"></div>
-      </div>
-
-      <button class="btn-next" id="btnNext">下一位<small id="nextHint">叫 001 號</small></button>
-
-      <div class="actions four">
-        <button class="btn" id="btnSkip">過號</button>
-        <button class="btn" id="btnCall">叫指定號</button>
-        <button class="btn" id="btnBreak">休息</button>
-        <button class="btn" id="btnUndo">↶ 退回</button>
-      </div>
+      <div class="dgrid" id="dgrid" aria-label="設計師：按一下叫下一號"></div>
+      <p class="hint dgrid-hint">按一下叫下一號・長按：過號、叫指定號、休息</p>
 
       <h2 class="section-title">等候名單 <small id="queueCount"></small></h2>
       <div class="panel queue-panel">
         <div class="queue" id="queue"></div>
-        <p class="hint" style="margin:10px 0 0">點號碼可以改指定、取消，或由你直接叫這號。</p>
+        <p class="hint" style="margin:10px 0 0">點號碼可以改指定或取消。</p>
         <form class="inline sync" id="syncForm">
           <input class="field" id="syncInput" type="number" inputmode="numeric" min="1" max="999" placeholder="機器發到幾號" aria-label="抽號機目前發到幾號" />
           <button class="btn" type="submit">補號</button>
@@ -92,9 +72,6 @@
         <p class="wait-now" id="waitNow"></p>
         <div class="wait-grid" id="waitGrid"></div>
       </div>
-
-      <h2 class="section-title">大家的狀態</h2>
-      <div class="card others" id="others"></div>
 
       <h2 class="section-title">其他</h2>
       <div class="card">
@@ -113,8 +90,8 @@
 
   <!-- ===== 加號列：固定在畫面底部，隨時按得到 ===== -->
   <div class="issuebar" id="issueBar" hidden>
-    <button class="issue-main" id="btnIssue">＋1 加號<small id="issueHint">發 001 號</small></button>
-    <button class="issue-pick" id="btnIssuePick">＋ 指定<small>設計師</small></button>
+    <button class="issue-btn" id="btnIssue">不指定</button>
+    <button class="issue-btn pick" id="btnIssuePick">指定</button>
   </div>
 
   <!-- 指定設計師加號 -->
@@ -124,15 +101,24 @@
     <button class="btn wide" type="button" id="pickCancel" style="margin-top:12px">取消</button>
   </dialog>
 
+  <!-- 長按設計師：更多操作 -->
+  <dialog id="dsheet" class="sheet">
+    <h2 id="dsTitle"></h2>
+    <div class="pick-grid">
+      <button class="btn" type="button" id="dsSkip">過號</button>
+      <button class="btn" type="button" id="dsCall">叫指定號碼</button>
+      <button class="btn" type="button" id="dsBreak">休息</button>
+      <button class="btn" type="button" id="dsUndo">↶ 退回</button>
+    </div>
+    <button class="btn wide" type="button" id="dsClose" style="margin-top:12px">關閉</button>
+  </dialog>
+
   <!-- 點等候名單的號碼 -->
   <dialog id="ticketDialog" class="sheet">
     <h2 id="ticketTitle"></h2>
     <p class="hint">改成指定：</p>
     <div class="pick-grid" id="assignGrid"></div>
-    <div class="dialog-actions">
-      <button class="btn" type="button" id="ticketCallMe">由我叫這號</button>
-      <button class="btn danger" type="button" id="ticketCancel">取消這號</button>
-    </div>
+    <button class="btn wide danger" type="button" id="ticketCancel" style="margin-top:12px">取消這號</button>
     <button class="btn wide" type="button" id="ticketClose" style="margin-top:10px">關閉</button>
   </dialog>
 

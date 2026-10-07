@@ -1,4 +1,4 @@
-/* 操作頁：設計師叫號＋店長設定 */
+/* 操作頁：加號、叫號（一位設計師一顆按鈕）＋店長設定 */
 (function () {
   const cfg = window.QC_CONFIG;
   const { store, pad3, esc, taipeiNow, designerView, waitInfo, waitText, agoText, addDays, weekday, waitingTickets } = window.QC;
@@ -6,8 +6,7 @@
   const SAVE_KEY = `qc-staff-${cfg.shopId}`;
 
   let state = null;
-  let session = loadSession();   // { pin, me }
-  let viewing = session.me;      // 目前操作哪位設計師（可以幫別人按）
+  let session = loadSession();   // { pin }
   let ownerPin = null;           // 店長密碼只存在記憶體，關掉頁面就要重輸
   let busy = false;
 
@@ -20,14 +19,18 @@
   function saveSession() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(session)); } catch (e) { /* 私密瀏覽 */ }
   }
+
+  // 提示訊息；叫號後附一顆「退回」，5 秒內按錯可以馬上復原
   let toastTimer;
-  function toast(msg, bad = false) {
+  function toast(msg, bad = false, undo = null) {
     const t = $('toast');
-    t.textContent = msg;
+    t.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button type="button" class="toast-undo">退回</button>' : ''}`;
     t.classList.toggle('bad', bad);
+    t.classList.toggle('action', Boolean(undo));
     t.classList.add('show');
+    if (undo) t.querySelector('.toast-undo').onclick = () => { t.classList.remove('show'); undo(); };
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+    toastTimer = setTimeout(() => t.classList.remove('show'), undo ? 5000 : 2200);
   }
   const buzz = () => { try { navigator.vibrate && navigator.vibrate(40); } catch (e) { /* iOS 不支援 */ } };
   const designer = (id) => cfg.designers.find((d) => d.id === id);
@@ -50,38 +53,22 @@
     window.scrollTo(0, 0);
   }
 
-  // ---------- 登入 ----------
+  // ---------- 登入：只要輸入店內密碼 ----------
   function startLogin() {
     show('loginView');
-    $('pinStep').hidden = false;
-    $('whoStep').hidden = true;
     setTimeout(() => $('pinInput').focus(), 50);
   }
-
   $('pinForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const pin = $('pinInput').value.trim();
     if (!pin) return;
     const r = await store.staff(pin, null, 'ping');
     if (!r.ok) { $('pinErr').textContent = r.message; return; }
-    session.pin = pin;
-    $('pinErr').textContent = '';
-    $('pinStep').hidden = true;
-    $('whoStep').hidden = false;
-  });
-
-  $('whoList').innerHTML = cfg.designers.map((d) =>
-    `<button class="btn" data-id="${d.id}">${esc(d.name)}<small>${esc(d.role === '店長' ? '店長・' : '')}${esc(d.shift)}</small></button>`
-  ).join('');
-  $('whoList').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-id]');
-    if (!b) return;
-    session.me = b.dataset.id;
-    viewing = session.me;
+    session = { pin };
     saveSession();
+    $('pinErr').textContent = '';
     enterMain();
   });
-
   $('btnLogout').addEventListener('click', async () => {
     if (!await ask('確定要登出這支手機嗎？', '登出')) return;
     session = {};
@@ -96,100 +83,134 @@
     renderMain();
   }
 
-  function renderChips() {
-    $('chips').innerHTML = cfg.designers.map((d) =>
-      `<button class="chip ${d.id === viewing ? 'on' : ''}" data-id="${d.id}" role="tab" aria-selected="${d.id === viewing}">${esc(d.name)}${d.id === session.me ? '（我）' : ''}</button>`
-    ).join('');
-  }
-  $('chips').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-id]');
-    if (!b) return;
-    viewing = b.dataset.id;
-    renderMain();
-  });
-
   function renderMain() {
-    renderChips();
     if (!state) return;
-    const d = designer(viewing);
-    const live = state.designers[viewing] || {};
-    const v = designerView(d, state, taipeiNow());
+    const now = taipeiNow();
     $('shopNum').textContent = pad3(state.lastCalled);
     $('shopIssued').textContent = pad3(state.lastIssued);
     const waitingAll = waitingTickets(state);
     $('shopWaiting').textContent = waitingAll.length;
-    $('meName').textContent = `${d.name}${viewing === session.me ? '' : '（幫忙操作中）'}`;
-    $('meNum').textContent = pad3(live.number);
-    $('meState').textContent = live.status === 'break' ? '休息中（客人頁顯示休息）' : v.kind === 'off' ? '今天是休假日' : live.number ? '服務中' : '等待叫號';
-    $('meCard').classList.toggle('break', live.status === 'break');
-    // 按下去會叫誰：先「指定我」的，沒有再「不指定」的
-    const mineQ = waitingTickets(state, viewing);
-    const nextT = mineQ[0] || waitingTickets(state, null)[0];
-    $('nextHint').textContent = nextT ? `叫 ${pad3(nextT.number)} 號${nextT.designer ? '（指定你）' : ''}`
-      : live.number ? '剪完了・目前沒人等候' : '目前沒人等候';
-    $('meQueue').textContent = mineQ.length ? `指定 ${d.name} 的還有 ${mineQ.length} 位在等` : '';
+
+    // 一位設計師一顆按鈕：名字＋服務中的號碼
+    $('dgrid').innerHTML = cfg.designers.map((d) => {
+      const v = designerView(d, state, now);
+      const shown = v.kind === 'off' ? '休假' : v.kind === 'away' ? v.label : v.kind === 'break' ? '休息中' : pad3(v.number);
+      return `<button class="dbtn ${v.kind}" data-id="${d.id}" aria-label="${esc(d.name)}，按一下叫下一號，長按更多操作">
+        <span class="dbtn-name">${esc(d.name)}</span>
+        <span class="dbtn-num num ${v.number && !['off', 'away', 'break'].includes(v.kind) ? '' : 'muted'}">${esc(shown)}</span>
+      </button>`;
+    }).join('');
 
     // 等候名單
     $('queueCount').textContent = waitingAll.length ? `${waitingAll.length} 人` : '';
     $('queue').innerHTML = waitingAll.length ? waitingAll.map((t) => {
       const who = t.designer ? designer(t.designer) : null;
-      return `<button class="qchip ${t.designer === viewing ? 'mine' : who ? 'assigned' : ''}" data-num="${t.number}">
+      return `<button class="qchip ${who ? 'assigned' : ''}" data-num="${t.number}">
         <b class="num">${pad3(t.number)}</b><small>${who ? `指定 ${esc(who.name)}` : '不指定'}</small></button>`;
     }).join('') : '<p class="empty">目前沒有人在等</p>';
     const last = (state.tickets || []).find((t) => t.number === state.lastIssued);
     $('btnUndoIssue').hidden = !(last && last.status === 'waiting');
     $('btnUndoIssue').textContent = `取消最後加的一號（${pad3(state.lastIssued)}）`;
-    $('issueHint').textContent = `發 ${pad3(state.lastIssued + 1)} 號`;
-    $('btnBreak').textContent = live.status === 'break' ? '回來上工' : '休息';
-    $('btnBreak').classList.toggle('on', live.status === 'break');
 
     // 等候時間評估
     const w = waitInfo(state);
     const waitEl = $('waitNow');
     waitEl.classList.toggle('stale', Boolean(w && !w.fresh) || !w);
-    waitEl.innerHTML = !w ? '還沒評估：客人頁不會顯示等候時間'
+    waitEl.innerHTML = !w ? '還沒評估：客人頁會依等候人數自動估算'
       : w.fresh ? `客人看到：<b>${esc(waitText(w.minutes))}</b>・${esc(agoText(w.ago))}`
-      : `${esc(agoText(w.ago))}，客人頁已隱藏，請重新評估`;
+      : `${esc(agoText(w.ago))}，已改回自動估算`;
     $('waitGrid').innerHTML = (cfg.waitOptions || [0, 10, 20, 30, 45, 60]).map((n) =>
       `<button class="btn ${w && w.fresh && w.minutes === n ? 'on' : ''}" data-wait="${n}">${n === 0 ? '免等' : n >= 60 ? '60+' : n}</button>`
     ).join('');
-
-    $('others').innerHTML = cfg.designers.map((x) => {
-      const xv = designerView(x, state, taipeiNow());
-      return `<div class="row"><div class="row-main"><div class="row-value"><span>${esc(x.name)}・${esc(xv.label)}</span><b class="num">${xv.number ? pad3(xv.number) : ''}</b></div></div></div>`;
-    }).join('');
   }
 
-  async function send(who, action, number) {
+  async function send(who, action, number, undo = null) {
     const r = await store.staff(session.pin, who, action, number);
-    toast(r.message, !r.ok);
+    toast(r.message, !r.ok, r.ok ? undo : null);
     if (!r.ok && r.message === '密碼錯誤') { session = {}; saveSession(); startLogin(); }
     return r;
   }
 
   // 叫號類：一次只送一個，避免連點
-  async function act(action, number) {
-    if (busy) return;
+  async function act(who, action, number, undo = null) {
+    if (busy) return null;
     busy = true;
-    $('btnNext').disabled = true;
     buzz();
-    try { await send(viewing, action, number); } finally {
-      busy = false;
-      $('btnNext').disabled = false;
-    }
+    try { return await send(who, action, number, undo); } finally { busy = false; }
   }
-
   // 加號類：客人可能連續投幣，所以每按一次都要算，不擋連點
   function issueAct(action, number, who = null) {
     buzz();
     return send(who, action, number);
   }
 
-  $('btnNext').addEventListener('click', () => act('next'));
-  $('btnSkip').addEventListener('click', async () => {
-    const cur = (state && state.designers[viewing] || {}).number;
-    if (!cur) { act('next'); return; }
-    if (await ask(`${pad3(cur)} 號沒出現？過號並叫下一位`, '過號')) act('skip');
+  // 叫下一號；附「退回」讓按錯的人 5 秒內復原
+  async function callNext(id) {
+    const d = designer(id);
+    const v = designerView(d, state, taipeiNow());
+    if ((v.kind === 'off' || v.kind === 'away') && !await ask(`${d.name} ${v.kind === 'off' ? '今天休假' : '目前不在班'}，還是要叫號嗎？`, '叫號')) return;
+    await act(id, 'next', null, () => act(id, 'undo'));
+  }
+
+  // ---------- 設計師按鈕：按一下叫號、長按開更多操作 ----------
+  const LONG_MS = 550;
+  let pressTimer = null, longPressed = false;
+  const grid = $('dgrid');
+  grid.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('[data-id]');
+    if (!b) return;
+    longPressed = false;
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(() => { longPressed = true; buzz(); openSheet(b.dataset.id); }, LONG_MS);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => grid.addEventListener(ev, () => clearTimeout(pressTimer)));
+  grid.addEventListener('contextmenu', (e) => {
+    const b = e.target.closest('[data-id]');
+    if (!b) return;
+    e.preventDefault();
+    if (!longPressed) { clearTimeout(pressTimer); longPressed = true; openSheet(b.dataset.id); }
+  });
+  grid.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-id]');
+    if (!b) return;
+    if (longPressed) { longPressed = false; return; }
+    callNext(b.dataset.id);
+  });
+
+  // 長按選單：過號、叫指定號碼、休息、退回
+  let sheetWho = null;
+  function openSheet(id) {
+    sheetWho = id;
+    const d = designer(id);
+    const live = (state && state.designers[id]) || {};
+    $('dsTitle').textContent = `${d.name}・目前 ${pad3(live.number)} 號`;
+    $('dsBreak').textContent = live.status === 'break' ? '回來上工' : '休息';
+    $('dsSkip').disabled = !live.number;
+    $('dsheet').showModal();
+  }
+  $('dsClose').addEventListener('click', () => $('dsheet').close());
+  $('dsSkip').addEventListener('click', async () => {
+    $('dsheet').close();
+    const cur = (state.designers[sheetWho] || {}).number;
+    if (await ask(`${pad3(cur)} 號沒出現？過號並叫下一位`, '過號')) act(sheetWho, 'skip');
+  });
+  $('dsBreak').addEventListener('click', () => { $('dsheet').close(); act(sheetWho, 'toggle_break'); });
+  $('dsUndo').addEventListener('click', async () => {
+    $('dsheet').close();
+    if (await ask(`${designer(sheetWho).name}：退回上一次的叫號？`, '退回')) act(sheetWho, 'undo');
+  });
+  $('dsCall').addEventListener('click', () => {
+    $('dsheet').close();
+    $('callTitle').textContent = `${designer(sheetWho).name}・叫指定號碼`;
+    $('callInput').value = '';
+    $('callDialog').showModal();
+    setTimeout(() => $('callInput').focus(), 50);
+  });
+  $('callCancel').addEventListener('click', () => $('callDialog').close());
+  $('callForm').addEventListener('submit', (e) => {
+    const n = parseInt($('callInput').value, 10);
+    if (!n) { e.preventDefault(); return; }
+    act(sheetWho, 'call', n);
   });
 
   // ---------- 加號 ----------
@@ -217,7 +238,7 @@
     issueAct('issue', null, b.dataset.id);
   });
 
-  // 點等候名單的號碼：改指定、取消、或由我叫
+  // 點等候名單的號碼：改指定、取消
   let pickedTicket = null;
   $('queue').addEventListener('click', (e) => {
     const b = e.target.closest('[data-num]');
@@ -226,7 +247,6 @@
     const t = state.tickets.find((x) => x.number === pickedTicket);
     $('ticketTitle').textContent = `${pad3(pickedTicket)} 號`;
     $('assignGrid').innerHTML = pickButtons(t ? t.designer : null, true);
-    $('ticketCallMe').textContent = `由 ${designer(viewing).name} 叫這號`;
     $('ticketDialog').showModal();
   });
   $('assignGrid').addEventListener('click', (e) => {
@@ -235,7 +255,6 @@
     $('ticketDialog').close();
     issueAct('assign', pickedTicket, b.dataset.id || null);
   });
-  $('ticketCallMe').addEventListener('click', () => { $('ticketDialog').close(); act('call', pickedTicket); });
   $('ticketCancel').addEventListener('click', async () => {
     $('ticketDialog').close();
     if (!await ask(`取消 ${pad3(pickedTicket)} 號？`, '取消這號')) return;
@@ -255,24 +274,7 @@
   });
   $('waitGrid').addEventListener('click', (e) => {
     const b = e.target.closest('[data-wait]');
-    if (b) act('set_wait', Number(b.dataset.wait));
-  });
-  $('btnBreak').addEventListener('click', () => act('toggle_break'));
-  $('btnUndo').addEventListener('click', async () => {
-    if (await ask(`${designer(viewing).name}：退回上一次的叫號？`, '退回')) act('undo');
-  });
-
-  $('btnCall').addEventListener('click', () => {
-    $('callTitle').textContent = `${designer(viewing).name}・叫指定號碼`;
-    $('callInput').value = '';
-    $('callDialog').showModal();
-    setTimeout(() => $('callInput').focus(), 50);
-  });
-  $('callCancel').addEventListener('click', () => $('callDialog').close());
-  $('callForm').addEventListener('submit', (e) => {
-    const n = parseInt($('callInput').value, 10);
-    if (!n) { e.preventDefault(); return; }
-    act('call', n);
+    if (b) act(null, 'set_wait', Number(b.dataset.wait));
   });
 
   // ---------- 店長設定 ----------
@@ -444,6 +446,6 @@
   store.subscribe(onState, (s) => { if (s === 'error') toast('連線中斷，重新連線中…', true); });
   setInterval(() => { if (state && !$('mainView').hidden) renderMain(); }, 30000);
 
-  if (session.pin && session.me && designer(session.me)) enterMain();
+  if (session.pin) enterMain();
   else startLogin();
 })();
