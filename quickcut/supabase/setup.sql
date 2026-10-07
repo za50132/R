@@ -57,6 +57,9 @@ create table if not exists public.tickets (
   primary key (shop_id, day, number)
 );
 
+-- 排隊順序：一般照號碼；過號的客人回來時，插在「目前等候第 3 位」的後面
+alter table public.tickets add column if not exists sort_key numeric;
+
 -- 當班人員評估的等候時間（分鐘）與評估時間
 alter table public.shops add column if not exists wait_minutes int;
 alter table public.shops add column if not exists wait_set_at  timestamptz;
@@ -205,7 +208,8 @@ end $$;
 --     issue_to       補號到 p_number（漏按時，對齊抽號機）
 --     undo_issue     取消最後加的那一號（按錯時用）
 --     assign         把等候中的 p_number 改成指定 p_designer（留空 = 不指定）
---     cancel_ticket  取消等候中的 p_number
+--     cancel_ticket  取消等候中（或已過號）的 p_number
+--     rejoin         過號的 p_number 回來了：排在目前等候第 3 位的後面（不到 3 位就排最後）
 --
 --   叫號（p_designer = 按按鈕的設計師）
 --     next           剪完了，叫下一位：先叫「指定我」的，沒有再叫「不指定」的
@@ -236,6 +240,8 @@ declare
   msg   text;
   who   text;
   today date := qc_today();
+  k     numeric;
+  k2    numeric;
 begin
   err := qc_check_pin(p_shop, p_pin, false);
   if err is not null then return json_build_object('ok', false, 'message', err); end if;
@@ -312,7 +318,7 @@ begin
 
   elsif p_action in ('assign', 'cancel_ticket') then
     select * into t from tickets where shop_id = p_shop and day = today and number = p_number for update;
-    if not found or t.status <> 'waiting' then
+    if not found or not (t.status = 'waiting' or (p_action = 'cancel_ticket' and t.status = 'skipped')) then
       return json_build_object('ok', false, 'message', qc_fmt(p_number) || ' 號不在等候名單');
     end if;
     if p_action = 'assign' then
@@ -325,6 +331,31 @@ begin
     update shops set updated_at = now() where id = p_shop;
     insert into call_log (shop_id, designer_id, action, number) values (p_shop, p_designer, p_action, p_number);
     return json_build_object('ok', true, 'message', msg);
+
+  elsif p_action = 'rejoin' then
+    select * into t from tickets where shop_id = p_shop and day = today and number = p_number for update;
+    if not found or t.status <> 'skipped' then
+      return json_build_object('ok', false, 'message', qc_fmt(p_number) || ' 號不是過號的號碼');
+    end if;
+    -- 過號要等 3 位：找出目前等候第 3 位的順序值，插在它和第 4 位中間
+    select coalesce(sort_key, number) into k from tickets
+     where shop_id = p_shop and day = today and status = 'waiting'
+     order by coalesce(sort_key, number), number offset 2 limit 1;
+    if k is null then   -- 等候不到 3 位：排最後
+      select max(coalesce(sort_key, number)) into k from tickets
+       where shop_id = p_shop and day = today and status = 'waiting';
+    end if;
+    k := coalesce(k, 0);
+    select min(coalesce(sort_key, number)) into k2 from tickets
+     where shop_id = p_shop and day = today and status = 'waiting' and coalesce(sort_key, number) > k;
+    update tickets set status = 'waiting', served_by = null, called_at = null, finished_at = null,
+                       sort_key = case when k2 is null then k + 1 else (k + k2) / 2 end
+     where shop_id = p_shop and day = today and number = p_number;
+    update shops set updated_at = now() where id = p_shop;
+    insert into call_log (shop_id, action, number) values (p_shop, 'rejoin', p_number);
+    return json_build_object('ok', true, 'waiting', qc_waiting(p_shop),
+      'message', qc_fmt(p_number) || ' 號回來了，' || case when qc_waiting(p_shop) <= 1 then '下一位就輪到他'
+                 else '排在 ' || least(3, qc_waiting(p_shop) - 1) || ' 位後面' end);
   end if;
 
   -- ===== 叫號（以下都需要知道是哪位設計師按的）=====
@@ -350,11 +381,11 @@ begin
     -- 先叫「指定我」的，沒有再叫「不指定」的，都照號碼順序
     select number into n from tickets
      where shop_id = p_shop and day = today and status = 'waiting' and designer_id = p_designer
-     order by number limit 1;
+     order by coalesce(sort_key, number), number limit 1;
     if n is null then
       select number into n from tickets
        where shop_id = p_shop and day = today and status = 'waiting' and designer_id is null
-       order by number limit 1;
+       order by coalesce(sort_key, number), number limit 1;
     end if;
 
     insert into call_log (shop_id, designer_id, action, number, prev_number, prev_last_called)

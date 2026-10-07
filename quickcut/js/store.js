@@ -29,9 +29,11 @@
       waitMinutes: fresh ? null : raw.wait_minutes ?? null,
       waitSetAt: fresh || !raw.wait_set_at ? null : Date.parse(raw.wait_set_at),
       designers,
+      // 依排隊順序排好：一般照號碼，過號回來的客人插在後面 3 位之後
       tickets: fresh ? [] : (raw.tickets || [])
-        .map((t) => ({ number: t.number, designer: t.designer_id, status: t.status, servedBy: t.served_by }))
-        .sort((a, b) => a.number - b.number),
+        .map((t) => ({ number: t.number, designer: t.designer_id, status: t.status, servedBy: t.served_by,
+                       order: t.sort_key != null ? Number(t.sort_key) : t.number }))
+        .sort((a, b) => a.order - b.order || a.number - b.number),
       daysOff: raw.days_off.map((o) => ({ designer: o.designer_id, day: o.day })),
     };
   }
@@ -51,7 +53,7 @@
         client.from('designers').select('id,status,current_number,called_at').eq('shop_id', shopId),
         client.from('days_off').select('designer_id,day').eq('shop_id', shopId)
           .gte('day', from).lte('day', QC.addDays(from, 200)),
-        client.from('tickets').select('number,designer_id,status,served_by').eq('shop_id', shopId).eq('day', from),
+        client.from('tickets').select('number,designer_id,status,served_by,sort_key').eq('shop_id', shopId).eq('day', from),
       ]);
       const err = s.error || d.error || o.error || t.error;
       if (err) throw err;
@@ -164,6 +166,9 @@
     const ok = (message, extra = {}) => ({ ok: true, message, ...extra });
     const fail = (message) => ({ ok: false, message });
     const ticket = (db, n) => db.tickets.find((t) => t.number === n);
+    // 排隊順序：一般照號碼，過號回來的客人用 sort_key 插隊到後面 3 位之後
+    const key = (t) => (t.sort_key != null ? t.sort_key : t.number);
+    const queue = (db) => db.tickets.filter((t) => t.status === 'waiting').sort((a, b) => key(a) - key(b) || a.number - b.number);
     const waiting = (db, who) => db.tickets.filter((t) => t.status === 'waiting' && (!who || t.designer_id === who)).length;
     function fillTo(db, upto) {
       const from = Math.max(db.shop.last_issued, ...db.tickets.map((t) => t.number), 0) + 1;
@@ -225,12 +230,27 @@
       }
       if (action === 'assign' || action === 'cancel_ticket') {
         const t = ticket(db, number);
-        if (!t || t.status !== 'waiting') return fail(`${fmt(number)} 號不在等候名單`);
+        if (!t || !(t.status === 'waiting' || (action === 'cancel_ticket' && t.status === 'skipped'))) {
+          return fail(`${fmt(number)} 號不在等候名單`);
+        }
         let msg;
         if (action === 'assign') { t.designer_id = designer || null; msg = `${fmt(number)} 號改為${who ? `指定 ${who}` : '不指定'}`; }
         else { t.status = 'cancelled'; msg = `已取消 ${fmt(number)} 號`; }
         write(db);
         return ok(msg);
+      }
+      if (action === 'rejoin') {
+        const t = ticket(db, number);
+        if (!t || t.status !== 'skipped') return fail(`${fmt(number)} 號不是過號的號碼`);
+        // 過號要等 3 位：插在目前等候第 3 位和第 4 位中間（不到 3 位就排最後）
+        const keys = queue(db).map(key);
+        const after = cfg.skipRejoinAfter || 3;
+        const k = keys.length >= after ? keys[after - 1] : keys.length ? keys[keys.length - 1] : 0;
+        const k2 = keys.find((x) => x > k);
+        Object.assign(t, { status: 'waiting', served_by: null, sort_key: k2 == null ? k + 1 : (k + k2) / 2 });
+        write(db);
+        const w = waiting(db);
+        return ok(`${fmt(number)} 號回來了，${w <= 1 ? '下一位就輪到他' : `排在 ${Math.min(after, w - 1)} 位後面`}`);
       }
 
       // ===== 叫號 =====
@@ -255,8 +275,8 @@
         const cur = serving();
         if (cur) cur.status = action === 'skip' ? 'skipped' : 'done';
         // 先叫「指定我」的，沒有再叫「不指定」的，都照號碼順序（tickets 依號碼排序）
-        const pick = db.tickets.find((t) => t.status === 'waiting' && t.designer_id === designer)
-                  || db.tickets.find((t) => t.status === 'waiting' && !t.designer_id);
+        const q = queue(db);
+        const pick = q.find((t) => t.designer_id === designer) || q.find((t) => !t.designer_id);
         db.log.unshift({ designer, action, number: pick ? pick.number : null, prev, prevLast: s.last_called, at: now, day: s.day });
         if (!pick) {
           d.current_number = null; d.called_at = iso(now); d.status = 'working';

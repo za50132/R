@@ -14,6 +14,9 @@ window.QC_CONFIG = {
   // 設計師超過幾分鐘沒叫號，就當作「空檔中」，客人頁會顯示「現在人少」
   idleMinutes: 20,
 
+  // 過號的客人回來後要再等幾位（要跟 supabase/setup.sql 的 rejoin 一致，目前是 3）
+  skipRejoinAfter: 3,
+
   // 剪一位平均幾分鐘：用來自動估算等候時間（之後可以用實際紀錄校正）
   avgCutMinutes: 12,
 

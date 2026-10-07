@@ -108,6 +108,13 @@
       return `<button class="qchip ${who ? 'assigned' : ''}" data-num="${t.number}">
         <b class="num">${pad3(t.number)}</b><small>${who ? `指定 ${esc(who.name)}` : '不指定'}</small></button>`;
     }).join('') : '<p class="empty">目前沒有人在等</p>';
+    // 過號：橘色另外列出來，客人回來時點一下
+    const skipped = (state.tickets || []).filter((t) => t.status === 'skipped').sort((a, b) => a.number - b.number);
+    $('skippedWrap').hidden = !skipped.length;
+    $('skipped').innerHTML = skipped.map((t) => {
+      const who = t.designer ? designer(t.designer) : null;
+      return `<button class="qchip skip" data-num="${t.number}"><b class="num">${pad3(t.number)}</b><small>過號${who ? `・${esc(who.name)}` : ''}</small></button>`;
+    }).join('');
     const last = (state.tickets || []).find((t) => t.number === state.lastIssued);
     $('btnUndoIssue').hidden = !(last && last.status === 'waiting');
     $('btnUndoIssue').textContent = `取消最後加的一號（${pad3(state.lastIssued)}）`;
@@ -227,17 +234,26 @@
     issueAct('issue', null, b.dataset.id);
   });
 
-  // 點等候名單的號碼：改指定、取消
+  // 點等候名單的號碼：改指定、取消；過號的號碼：客人回來了
   let pickedTicket = null;
-  $('queue').addEventListener('click', (e) => {
+  const AFTER = cfg.skipRejoinAfter || 3;
+  $('skipAfter').textContent = AFTER;
+  function openTicket(e) {
     const b = e.target.closest('[data-num]');
     if (!b) return;
     pickedTicket = Number(b.dataset.num);
     const t = state.tickets.find((x) => x.number === pickedTicket);
-    $('ticketTitle').textContent = `${pad3(pickedTicket)} 號`;
-    $('assignGrid').innerHTML = pickButtons(t ? t.designer : null, true);
+    const isSkipped = Boolean(t && t.status === 'skipped');
+    $('ticketTitle').textContent = `${pad3(pickedTicket)} 號${isSkipped ? '（過號）' : ''}`;
+    $('ticketRejoin').hidden = !isSkipped;
+    $('ticketRejoin').textContent = `客人回來了・排在 ${AFTER} 位後面`;
+    $('assignWrap').hidden = isSkipped;
+    if (!isSkipped) $('assignGrid').innerHTML = pickButtons(t ? t.designer : null, true);
     $('ticketDialog').showModal();
-  });
+  }
+  $('queue').addEventListener('click', openTicket);
+  $('skipped').addEventListener('click', openTicket);
+  $('ticketRejoin').addEventListener('click', () => { $('ticketDialog').close(); issueAct('rejoin', pickedTicket); });
   $('assignGrid').addEventListener('click', (e) => {
     const b = e.target.closest('[data-id]');
     if (!b) return;

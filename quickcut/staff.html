@@ -59,7 +59,11 @@
       <h2 class="section-title">等候名單 <small id="queueCount"></small></h2>
       <div class="panel queue-panel">
         <div class="queue" id="queue"></div>
-        <p class="hint" style="margin:10px 0 0">點號碼可以改指定或取消。</p>
+        <div class="skipped" id="skippedWrap" hidden>
+          <p class="skipped-title">過號（回來要再等 <span id="skipAfter">3</span> 位）</p>
+          <div class="queue" id="skipped"></div>
+        </div>
+        <p class="hint" style="margin:10px 0 0">點號碼可以改指定或取消；過號的客人回來了，點他的號碼。</p>
         <form class="inline sync" id="syncForm">
           <input class="field" id="syncInput" type="number" inputmode="numeric" min="1" max="999" placeholder="機器發到幾號" aria-label="抽號機目前發到幾號" />
           <button class="btn" type="submit">補號</button>
@@ -110,8 +114,11 @@
   <!-- 點等候名單的號碼 -->
   <dialog id="ticketDialog" class="sheet">
     <h2 id="ticketTitle"></h2>
-    <p class="hint">改成指定：</p>
-    <div class="pick-grid" id="assignGrid"></div>
+    <button class="btn wide primary rejoin" type="button" id="ticketRejoin" hidden>客人回來了・排在 3 位後面</button>
+    <div id="assignWrap">
+      <p class="hint">改成指定：</p>
+      <div class="pick-grid" id="assignGrid"></div>
+    </div>
     <button class="btn wide danger" type="button" id="ticketCancel" style="margin-top:12px">取消這號</button>
     <button class="btn wide" type="button" id="ticketClose" style="margin-top:10px">關閉</button>
   </dialog>

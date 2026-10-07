@@ -132,7 +132,7 @@
       const eta = info.minutes == null ? '設計師目前不在或休息中' : `預估等候 ${waitText(info.minutes)}`;
       html = `${num}　${who}前面還有 <b>${info.ahead}</b> 位<br><small>${esc(eta)}</small>`;
     } else if (info.kind === 'done') html = `${num} 已完成服務，謝謝光臨`;
-    else if (info.kind === 'skipped') html = `${num} 已過號，請直接跟店內人員說一聲`;
+    else if (info.kind === 'skipped') html = `${num} 已過號<br><small>回來後要再等 ${cfg.skipRejoinAfter || 3} 位，請跟店內人員說一聲</small>`;
     else if (info.kind === 'cancelled') html = `${num} 已取消`;
     else if (info.kind === 'unknown') html = `還沒發到 ${num}，請確認號碼牌`;
     else html = `查不到 ${num}`;

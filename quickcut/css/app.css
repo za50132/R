@@ -425,6 +425,14 @@ dialog h2 { margin: 0 0 12px; font-size: 19px; }
 }
 .kv { font-size: 13px; color: var(--ink-soft); margin-top: 10px; font-weight: 700; }
 
+/* 等候名單裡的過號：橘色 */
+.skipped { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.skipped-title { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: #a85a10; }
+.qchip.skip { background: #fff3e3; outline: 2px solid #f0b77c; }
+.qchip.skip b { color: #a85a10; }
+.qchip.skip small { color: #a85a10; font-weight: 700; }
+.btn.rejoin { margin-bottom: 12px; padding: 16px; font-size: 17px; }
+
 /* 底部加號：兩顆一樣大 */
 .issuebar .issue-btn { font-size: 26px; padding: 18px 4px; letter-spacing: .12em; background: var(--ink); color: #fff; }
 .issuebar .issue-btn.pick { background: var(--teal); color: #fff; }
