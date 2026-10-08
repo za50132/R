@@ -6,8 +6,8 @@ window.QC_CONFIG = {
   // ===== Supabase 連線設定 =====
   // 兩個都留空 = 「示範模式」：資料只存在這台電腦的瀏覽器，方便先試玩。
   // 申請 Supabase 後填入（README.md 有教學）。
-  supabaseUrl: '',      // 例：'https://abcdefgh.supabase.co'
-  supabaseKey: '',      // anon / publishable key（可以公開的那一把）
+  supabaseUrl: 'https://bjkpwljxvvobkgsyxkpy.supabase.co',      // 例：'https://abcdefgh.supabase.co'
+  supabaseKey: 'sb_publishable_TVRoSQIDt9uudKL8TnycPw_mQs96UW0',      // anon / publishable key（可以公開的那一把）
 
   shopId: 'qingjin',    // 要跟 supabase/setup.sql 裡的店家代號一樣
 
