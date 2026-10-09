@@ -31,7 +31,7 @@
       designers,
       // 依排隊順序排好：一般照號碼，過號回來的客人插在後面 3 位之後
       tickets: fresh ? [] : (raw.tickets || [])
-        .map((t) => ({ number: t.number, designer: t.designer_id, status: t.status, servedBy: t.served_by,
+        .map((t) => ({ number: t.number, designer: t.designer_id, assigned: Boolean(t.assigned), status: t.status, servedBy: t.served_by,
                        order: t.sort_key != null ? Number(t.sort_key) : t.number }))
         .sort((a, b) => a.order - b.order || a.number - b.number),
       daysOff: raw.days_off.map((o) => ({ designer: o.designer_id, day: o.day })),
@@ -53,7 +53,7 @@
         client.from('designers').select('id,status,current_number,called_at').eq('shop_id', shopId),
         client.from('days_off').select('designer_id,day').eq('shop_id', shopId)
           .gte('day', from).lte('day', QC.addDays(from, 200)),
-        client.from('tickets').select('number,designer_id,status,served_by,sort_key').eq('shop_id', shopId).eq('day', from),
+        client.from('tickets').select('*').eq('shop_id', shopId).eq('day', from),
       ]);
       const err = s.error || d.error || o.error || t.error;
       if (err) throw err;
@@ -210,7 +210,7 @@
       }
 
       // ===== 加號 =====
-      if ((action === 'issue' || action === 'assign') && designer && !db.designers[designer]) return fail('找不到這位設計師');
+      if (['issue', 'assign', 'dispatch'].includes(action) && designer && !db.designers[designer]) return fail('找不到這位設計師');
       const who = designer ? nameOf(designer) : null;
       if (action === 'issue') {
         const n = Math.max(s.last_issued, ...db.tickets.map((t) => t.number), 0) + 1;
@@ -235,13 +235,21 @@
         write(db);
         return ok(`已取消 ${fmt(t.number)} 號`);
       }
-      if (action === 'assign' || action === 'cancel_ticket') {
+      if (action === 'assign' || action === 'dispatch' || action === 'cancel_ticket') {
         const t = ticket(db, number);
         if (!t || !(t.status === 'waiting' || (action === 'cancel_ticket' && t.status === 'skipped'))) {
           return fail(`${fmt(number)} 號不在等候名單`);
         }
         let msg;
-        if (action === 'assign') { t.designer_id = designer || null; msg = `${fmt(number)} 號改為${who ? `指定 ${who}` : '不指定'}`; }
+        if (action === 'assign') {
+          t.designer_id = designer || null; t.assigned = false;
+          msg = `${fmt(number)} 號改為${who ? `指定 ${who}` : '不指定'}`;
+        } else if (action === 'dispatch') {
+          // 指派：只能用在不指定（或已指派）的客人，客人自己指定的不能改
+          if (t.designer_id && !t.assigned) return fail(`${fmt(number)} 號是客人指定的，不能指派`);
+          t.designer_id = designer || null; t.assigned = Boolean(designer);
+          msg = `${fmt(number)} 號${who ? `指派給 ${who}` : '改回不指定'}`;
+        }
         else { t.status = 'cancelled'; msg = `已取消 ${fmt(number)} 號`; }
         write(db);
         return ok(msg);
@@ -292,7 +300,7 @@
         }
         take(pick.number);
         write(db);
-        return ok(`${action === 'skip' ? '過號・' : ''}${name} 叫 ${fmt(pick.number)}${pick.designer_id ? '（指定）' : ''}・等 ${waiting(db)} 人`,
+        return ok(`${action === 'skip' ? '過號・' : ''}${name} 叫 ${fmt(pick.number)}${pick.assigned ? '（指派）' : pick.designer_id ? '（指定）' : ''}・等 ${waiting(db)} 人`,
           { number: pick.number });
       }
       if (action === 'call') {

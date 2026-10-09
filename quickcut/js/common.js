@@ -115,7 +115,7 @@
       // state.tickets 已依排隊順序排好（過號回來的會排在後面）
       const ahead = waitingTickets(state, t.designer).findIndex((x) => x.number === number);
       const on = active.some((d) => d.id === t.designer);
-      return { kind: 'waiting', ahead, designer: t.designer, minutes: on ? round5((ahead + 0.5) * AVG()) : null };
+      return { kind: 'waiting', ahead, designer: t.designer, assigned: t.assigned, minutes: on ? round5((ahead + 0.5) * AVG()) : null };
     }
     const ahead = waitingTickets(state).findIndex((x) => x.number === number);
     return { kind: 'waiting', ahead, minutes: active.length ? round5(((ahead + 0.5) * AVG()) / active.length) : null };

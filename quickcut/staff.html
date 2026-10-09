@@ -63,7 +63,7 @@
           <p class="skipped-title">過號（回來要再等 <span id="skipAfter">3</span> 位）</p>
           <div class="queue" id="skipped"></div>
         </div>
-        <p class="hint" style="margin:10px 0 0">點號碼可以改指定或取消；過號的客人回來了，點他的號碼。</p>
+        <p class="hint" style="margin:10px 0 0">點「不指定」的號碼可以指派給設計師，指派後就不會被後面的指定客插隊。過號的客人回來了，點他的號碼。</p>
         <form class="inline sync" id="syncForm">
           <input class="field" id="syncInput" type="number" inputmode="numeric" min="1" max="999" placeholder="機器發到幾號" aria-label="抽號機目前發到幾號" />
           <button class="btn" type="submit">補號</button>
@@ -116,7 +116,7 @@
     <h2 id="ticketTitle"></h2>
     <button class="btn wide primary rejoin" type="button" id="ticketRejoin" hidden>客人回來了・排在 3 位後面</button>
     <div id="assignWrap">
-      <p class="hint">改成指定：</p>
+      <p class="hint" id="assignHint">指派給：</p>
       <div class="pick-grid" id="assignGrid"></div>
     </div>
     <button class="btn wide danger" type="button" id="ticketCancel" style="margin-top:12px">取消這號</button>

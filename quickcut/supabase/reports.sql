@@ -95,11 +95,12 @@ select x_dow                                                as "星期(1=一)",
  order by 1, x_hour;
 
 
--- ④ 設計師（最近 4 週）：服務人數、被指定人數、指定率
+-- ④ 設計師（最近 4 週）：服務人數、被指定人數、指定率（店內指派的不算指定）
 select coalesce(d.name, t.served_by)                                 as "設計師",
        count(*)                                                     as "服務人數",
-       count(*) filter (where t.designer_id = t.served_by)          as "被指定",
-       round(100.0 * count(*) filter (where t.designer_id = t.served_by) / count(*), 1) as "指定率%"
+       count(*) filter (where t.designer_id = t.served_by and not t.assigned) as "被指定",
+       count(*) filter (where t.designer_id = t.served_by and t.assigned)     as "被指派",
+       round(100.0 * count(*) filter (where t.designer_id = t.served_by and not t.assigned) / count(*), 1) as "指定率%"
   from tickets t left join designers d on d.shop_id = t.shop_id and d.id = t.served_by
  where t.shop_id = 'qingjin' and t.served_by is not null and t.day >= current_date - 28
  group by 1 order by 2 desc;

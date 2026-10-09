@@ -327,6 +327,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .qchip.mine { background: var(--teal-soft); outline: 2px solid var(--teal); }
 .qchip.mine small { color: var(--teal-dark); font-weight: 700; }
 .qchip.assigned small { color: var(--teal-dark); }
+/* 不指定：提醒店內可以點進去指派；指派：虛線框，跟客人自己指定的分開 */
+.qchip.open small { color: var(--muted); }
+.qchip.dispatched { outline: 2px dashed var(--teal); }
+.qchip.dispatched small { color: var(--teal-dark); font-weight: 700; }
 .sync { margin-top: 12px; }
 .undo-issue { margin-top: 8px; font-size: 14px; color: var(--ink-soft); }
 

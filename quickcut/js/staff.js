@@ -105,8 +105,10 @@
     $('queueCount').textContent = waitingAll.length ? `${waitingAll.length} 人` : '';
     $('queue').innerHTML = waitingAll.length ? waitingAll.map((t) => {
       const who = t.designer ? designer(t.designer) : null;
-      return `<button class="qchip ${who ? 'assigned' : ''}" data-num="${t.number}">
-        <b class="num">${pad3(t.number)}</b><small>${who ? `指定 ${esc(who.name)}` : '不指定'}</small></button>`;
+      const cls = !who ? 'open' : t.assigned ? 'dispatched' : 'assigned';
+      const label = !who ? '不指定' : `${t.assigned ? '指派' : '指定'} ${esc(who.name)}`;
+      return `<button class="qchip ${cls}" data-num="${t.number}">
+        <b class="num">${pad3(t.number)}</b><small>${label}</small></button>`;
     }).join('') : '<p class="empty">目前沒有人在等</p>';
     // 過號：橘色另外列出來，客人回來時點一下
     const skipped = (state.tickets || []).filter((t) => t.status === 'skipped').sort((a, b) => a.number - b.number);
@@ -234,8 +236,10 @@
     issueAct('issue', null, b.dataset.id);
   });
 
-  // 點等候名單的號碼：改指定、取消；過號的號碼：客人回來了
+  // 點等候名單的號碼：不指定的 → 指派給設計師；客人指定的 → 改指定；都可以取消
+  // 過號的號碼：客人回來了
   let pickedTicket = null;
+  let assignAction = 'dispatch';
   const AFTER = cfg.skipRejoinAfter || 3;
   $('skipAfter').textContent = AFTER;
   function openTicket(e) {
@@ -248,6 +252,10 @@
     $('ticketRejoin').hidden = !isSkipped;
     $('ticketRejoin').textContent = `客人回來了・排在 ${AFTER} 位後面`;
     $('assignWrap').hidden = isSkipped;
+    // 客人自己指定的維持「改指定」；不指定或已指派的用「指派」
+    const chosen = Boolean(t && t.designer && !t.assigned);
+    assignAction = chosen ? 'assign' : 'dispatch';
+    $('assignHint').textContent = chosen ? '客人指定的，要改成：' : '指派給哪位設計師？';
     if (!isSkipped) $('assignGrid').innerHTML = pickButtons(t ? t.designer : null, true);
     $('ticketDialog').showModal();
   }
@@ -258,7 +266,7 @@
     const b = e.target.closest('[data-id]');
     if (!b) return;
     $('ticketDialog').close();
-    issueAct('assign', pickedTicket, b.dataset.id || null);
+    issueAct(assignAction, pickedTicket, b.dataset.id || null);
   });
   $('ticketCancel').addEventListener('click', async () => {
     $('ticketDialog').close();

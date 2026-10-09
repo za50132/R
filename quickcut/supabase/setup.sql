@@ -60,6 +60,10 @@ create table if not exists public.tickets (
 -- 排隊順序：一般照號碼；過號的客人回來時，插在「目前等候第 3 位」的後面
 alter table public.tickets add column if not exists sort_key numeric;
 
+-- 指派：不指定的客人，由店內人員排給某位設計師（designer_id 有值、assigned = true）
+--       跟客人自己「指定」分開記，報表才算得出真正的指定率
+alter table public.tickets add column if not exists assigned boolean not null default false;
+
 -- 當班人員評估的等候時間（分鐘）與評估時間
 alter table public.shops add column if not exists wait_minutes int;
 alter table public.shops add column if not exists wait_set_at  timestamptz;
@@ -208,6 +212,8 @@ end $$;
 --     issue_to       補號到 p_number（漏按時，對齊抽號機）
 --     undo_issue     取消最後加的那一號（按錯時用）
 --     assign         把等候中的 p_number 改成指定 p_designer（留空 = 不指定）
+--     dispatch       把不指定的 p_number 指派給 p_designer（留空 = 改回不指定）：
+--                    指派後就排進那位設計師的隊伍，不會一直被後面的指定客插隊
 --     cancel_ticket  取消等候中（或已過號）的 p_number
 --     rejoin         過號的 p_number 回來了：排在目前等候第 3 位的後面（不到 3 位就排最後）
 --
@@ -280,7 +286,7 @@ begin
   end if;
 
   -- ===== 加號 =====
-  if p_action in ('issue', 'assign') and p_designer is not null
+  if p_action in ('issue', 'assign', 'dispatch') and p_designer is not null
      and not exists (select 1 from designers where shop_id = p_shop and id = p_designer) then
     return json_build_object('ok', false, 'message', '找不到這位設計師');
   end if;
@@ -316,14 +322,21 @@ begin
     insert into call_log (shop_id, action, number) values (p_shop, 'undo_issue', s.last_issued);
     return json_build_object('ok', true, 'message', '已取消 ' || qc_fmt(s.last_issued) || ' 號');
 
-  elsif p_action in ('assign', 'cancel_ticket') then
+  elsif p_action in ('assign', 'dispatch', 'cancel_ticket') then
     select * into t from tickets where shop_id = p_shop and day = today and number = p_number for update;
     if not found or not (t.status = 'waiting' or (p_action = 'cancel_ticket' and t.status = 'skipped')) then
       return json_build_object('ok', false, 'message', qc_fmt(p_number) || ' 號不在等候名單');
     end if;
     if p_action = 'assign' then
-      update tickets set designer_id = p_designer where shop_id = p_shop and day = today and number = p_number;
+      update tickets set designer_id = p_designer, assigned = false where shop_id = p_shop and day = today and number = p_number;
       msg := qc_fmt(p_number) || ' 號改為' || coalesce('指定 ' || who, '不指定');
+    elsif p_action = 'dispatch' then
+      if t.designer_id is not null and not t.assigned then
+        return json_build_object('ok', false, 'message', qc_fmt(p_number) || ' 號是客人指定的，不能指派');
+      end if;
+      update tickets set designer_id = p_designer, assigned = (p_designer is not null)
+       where shop_id = p_shop and day = today and number = p_number;
+      msg := qc_fmt(p_number) || ' 號' || coalesce('指派給 ' || who, '改回不指定');
     else
       update tickets set status = 'cancelled', finished_at = now() where shop_id = p_shop and day = today and number = p_number;
       msg := '已取消 ' || qc_fmt(p_number) || ' 號';
@@ -407,7 +420,8 @@ begin
      where shop_id = p_shop and id = p_designer;
     return json_build_object('ok', true, 'number', n, 'waiting', qc_waiting(p_shop),
       'message', case when p_action = 'skip' then '過號・' else '' end
-                 || d.name || ' 叫 ' || qc_fmt(n) || case when t.designer_id is not null then '（指定）' else '' end
+                 || d.name || ' 叫 ' || qc_fmt(n)
+                 || case when t.assigned then '（指派）' when t.designer_id is not null then '（指定）' else '' end
                  || '・等 ' || qc_waiting(p_shop) || ' 人');
 
   elsif p_action = 'call' then

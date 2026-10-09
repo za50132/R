@@ -57,7 +57,7 @@
       return `<article class="dcard ${v.kind}">
         <div class="dcard-head"><span class="dcard-name">${esc(d.name)}</span><span class="dcard-role">${esc(d.role === '店長' ? '店長' : d.shift)}</span></div>
         <div class="dcard-state"><span class="dot"></span>${esc(v.label)}</div>
-        ${queued ? `<div class="dcard-queue">指定等候 ${queued} 人</div>` : ''}
+        ${queued ? `<div class="dcard-queue">等候 ${queued} 人</div>` : ''}
         ${body}
       </article>`;
     }).join('');
@@ -145,7 +145,7 @@
     let html;
     if (info.kind === 'serving') html = `🎉 ${num} 輪到您了！請找 <b>${esc(name(info.by))}</b>`;
     else if (info.kind === 'waiting') {
-      const who = info.designer ? `指定 ${esc(name(info.designer))}・` : '';
+      const who = info.designer ? `${info.assigned ? '指派' : '指定'} ${esc(name(info.designer))}・` : '';
       const eta = info.minutes == null ? '設計師目前不在或休息中' : `預估等候 ${waitText(info.minutes)}`;
       html = `${num}　${who}前面還有 <b>${info.ahead}</b> 位<br><small>${esc(eta)}</small>`;
     } else if (info.kind === 'done') html = `${num} 已完成服務，謝謝光臨`;
