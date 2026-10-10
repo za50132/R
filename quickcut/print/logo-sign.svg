@@ -4,38 +4,40 @@
   <polyline points="322,96 322,52 164,52 190,264 312,264" fill="none" stroke="#1d1f22" stroke-width="7"/>
 
   <g fill="#1d1f22">
-    <!-- 「請」的言字旁：綁小馬尾的人 -->
-    <circle cx="318" cy="128" r="43"/>
-    <path d="M286 106 C 268 96, 250 104, 240 120 C 256 116, 270 122, 290 132 Z"/>
-    <rect x="296" y="180" width="50" height="11"/>
-    <rect x="313" y="190" width="15" height="78"/>
-    <polygon points="313,266 328,266 362,312 302,312"/>
+    <!-- 「請」的言字旁：綁小馬尾的人，身體是倒梯形 -->
+    <circle cx="316" cy="130" r="43"/>
+    <path d="M284 108 C 266 98, 250 104, 239 118 C 256 115, 270 122, 288 134 Z"/>
+    <rect x="329" y="166" width="12" height="20"/>
+    <polygon points="294,182 358,182 358,273 322,273"/>
+    <polygon points="322,270 356,270 386,315 306,315"/>
 
-    <!-- 「請」的青：幾何線條 -->
-    <rect x="426" y="95" width="13" height="66"/>
-    <rect x="356" y="107" width="144" height="12"/>
-    <rect x="370" y="129" width="116" height="12"/>
-    <rect x="346" y="152" width="172" height="13"/>
-    <rect x="398" y="178" width="13" height="132"/>
-    <rect x="398" y="178" width="110" height="12"/>
-    <rect x="495" y="178" width="13" height="124"/>
-    <rect x="478" y="291" width="30" height="11"/>
-    <rect x="405" y="212" width="96" height="12"/>
-    <rect x="405" y="246" width="96" height="12"/>
+    <!-- 「請」的青 -->
+    <rect x="420" y="103" width="13" height="84"/>
+    <rect x="365" y="116" width="133" height="13"/>
+    <rect x="372" y="147" width="119" height="13"/>
+    <rect x="359" y="175" width="154" height="13"/>
+    <rect x="397" y="200" width="13" height="112"/>
+    <rect x="397" y="200" width="109" height="12"/>
+    <rect x="493" y="200" width="13" height="105"/>
+    <rect x="478" y="294" width="28" height="11"/>
+    <rect x="404" y="228" width="94" height="11"/>
+    <rect x="404" y="258" width="94" height="11"/>
 
-    <!-- 「進」的辵字旁：鮑伯頭的人＋往右延伸的底 -->
-    <path d="M592 100 C 625 98, 640 128, 636 160 C 633 180, 622 190, 606 190 L 576 190 C 566 190, 560 182, 548 186 C 556 176, 552 160, 552 146 C 552 118, 568 100, 592 100 Z"/>
-    <polygon points="598,188 616,188 646,298 598,298"/>
-    <polygon points="598,302 802,299 598,323"/>
+    <!-- 「進」的辵字旁：兩邊翹髮尾的短髮人，身體加寬，下面往右延伸的斜底 -->
+    <path d="M594 100 C 626 100, 642 124, 640 152 C 639 168, 636 178, 644 192 C 630 190, 620 185, 610 185 L 578 185 C 566 185, 560 181, 545 186 C 554 173, 551 158, 551 146 C 551 118, 566 100, 594 100 Z"/>
+    <polygon points="597,187 627,187 660,289 597,289"/>
+    <polygon points="597,302 802,299 597,323"/>
 
-    <!-- 「進」的隹：幾何線條 -->
-    <polygon points="688,148 701,148 713,176 700,176"/>
-    <rect x="654" y="176" width="12" height="122"/>
-    <rect x="701" y="176" width="13" height="112"/>
-    <rect x="654" y="176" width="118" height="12"/>
-    <rect x="666" y="210" width="106" height="12"/>
-    <rect x="666" y="244" width="106" height="12"/>
-    <rect x="666" y="278" width="126" height="12"/>
+    <!-- 「進」的隹：上面一點、左上一撇、四橫 -->
+    <polygon points="690,139 728,157 722,168 687,150"/>
+    <polygon points="655,136 667,136 667,182 655,182"/>
+    <polygon points="655,176 668,182 648,215 635,207"/>
+    <rect x="669" y="171" width="12" height="124"/>
+    <rect x="716" y="171" width="12" height="118"/>
+    <rect x="669" y="171" width="104" height="13"/>
+    <rect x="681" y="206" width="92" height="13"/>
+    <rect x="681" y="240" width="95" height="13"/>
+    <rect x="681" y="276" width="115" height="14"/>
   </g>
 
   <!-- HAIR CUT ✂ PLEASE COME IN -->
