@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="150 36 670 360" role="img" aria-label="請進 HAIR CUT PLEASE COME IN">
+  <!-- 鏡框：黑色外框，裡面一塊湖水綠 -->
+  <polygon points="208,60 322,60 322,250 236,224" fill="#5fb4aa"/>
+  <polyline points="322,96 322,52 164,52 190,264 312,264" fill="none" stroke="#1d1f22" stroke-width="7"/>
+
+  <g fill="#1d1f22">
+    <!-- 「請」的言字旁：綁小馬尾的人 -->
+    <circle cx="318" cy="128" r="43"/>
+    <path d="M286 106 C 268 96, 250 104, 240 120 C 256 116, 270 122, 290 132 Z"/>
+    <rect x="296" y="180" width="50" height="11"/>
+    <rect x="313" y="190" width="15" height="78"/>
+    <polygon points="313,266 328,266 362,312 302,312"/>
+
+    <!-- 「請」的青：幾何線條 -->
+    <rect x="426" y="95" width="13" height="66"/>
+    <rect x="356" y="107" width="144" height="12"/>
+    <rect x="370" y="129" width="116" height="12"/>
+    <rect x="346" y="152" width="172" height="13"/>
+    <rect x="398" y="178" width="13" height="132"/>
+    <rect x="398" y="178" width="110" height="12"/>
+    <rect x="495" y="178" width="13" height="124"/>
+    <rect x="478" y="291" width="30" height="11"/>
+    <rect x="405" y="212" width="96" height="12"/>
+    <rect x="405" y="246" width="96" height="12"/>
+
+    <!-- 「進」的辵字旁：鮑伯頭的人＋往右延伸的底 -->
+    <path d="M592 100 C 625 98, 640 128, 636 160 C 633 180, 622 190, 606 190 L 576 190 C 566 190, 560 182, 548 186 C 556 176, 552 160, 552 146 C 552 118, 568 100, 592 100 Z"/>
+    <polygon points="598,188 616,188 646,298 598,298"/>
+    <polygon points="598,302 802,299 598,323"/>
+
+    <!-- 「進」的隹：幾何線條 -->
+    <polygon points="688,148 701,148 713,176 700,176"/>
+    <rect x="654" y="176" width="12" height="122"/>
+    <rect x="701" y="176" width="13" height="112"/>
+    <rect x="654" y="176" width="118" height="12"/>
+    <rect x="666" y="210" width="106" height="12"/>
+    <rect x="666" y="244" width="106" height="12"/>
+    <rect x="666" y="278" width="126" height="12"/>
+  </g>
+
+  <!-- HAIR CUT ✂ PLEASE COME IN -->
+  <g transform="skewX(-14)" font-family="QC" font-weight="500" fill="#1d1f22" font-size="31">
+    <text x="300" y="382" textLength="180" lengthAdjust="spacingAndGlyphs">HAIR CUT</text>
+    <text x="573" y="382" textLength="312" lengthAdjust="spacing">PLEASE COME IN</text>
+  </g>
+  <!-- 剪刀 -->
+  <g transform="translate(436 370) rotate(-20)" fill="none" stroke-width="3.2">
+    <circle cx="-7" cy="-9" r="5.5" stroke="#1d1f22"/>
+    <circle cx="-7" cy="9" r="5.5" stroke="#1d1f22"/>
+    <path d="M-2 -6 L 16 6 M-2 6 L 16 -6" stroke="#5fb4aa" stroke-linecap="round"/>
+  </g>
+</svg>
