@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>請進快剪｜$120 佰二剪髮・永和</title>
+  <meta name="description" content="請進快剪，$120 快速剪髮，不用預約。投幣抽號碼牌，手機就能看現在叫到幾號。新北市永和區永平路 180 巷 1 號，營業時間 09:30–22:30。" />
+  <meta name="theme-color" content="#5fb4aa" />
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="img/icon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* 請進快剪 一頁式介紹  配色取自店門口招牌 */
+    :root {
+      --teal: #5fb4aa; --teal-dark: #3f8f86; --teal-soft: #e3f3f1;
+      --ink: #1d1f22; --ink-soft: #5d646c; --line: #e3e7ea; --bg: #f3f5f5; --wood: #b07a4f;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--ink); line-height: 1.6;
+      font-family: 'Noto Sans TC', -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+    section { padding: 40px 0; }
+    h2 { font-size: 26px; font-weight: 900; letter-spacing: .04em; margin-bottom: 18px; }
+    h2 small { display: block; font-size: 13px; font-weight: 500; color: var(--ink-soft); letter-spacing: .12em; margin-bottom: 2px; }
+
+    /* ===== 招牌 ===== */
+    .hero { background: #fff; padding: 20px 0 40px; border-bottom: 6px solid var(--wood); }
+    .sign {
+      display: flex; align-items: stretch; border-radius: 18px; overflow: hidden;
+      background: #fff; box-shadow: 0 1px 2px rgba(20,30,40,.06), 0 8px 24px rgba(20,30,40,.08);
+    }
+    .sign-logo { flex: 1 1 62%; min-width: 0; padding: 14px 10px 10px 16px; display: flex; align-items: center; }
+    .sign-logo svg { width: 100%; height: auto; max-height: 190px; display: block; }
+    .sign-price {
+      flex: 0 0 34%; background: var(--teal); color: #1f2a2c; font-weight: 900; text-align: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15;
+      border-top-left-radius: 48px 100%; border-bottom-left-radius: 48px 100%; padding: 10px 10px 10px 22px;
+    }
+    .sign-price b { font-size: clamp(26px, 7vw, 56px); letter-spacing: .02em; }
+    .sign-price span { font-size: clamp(15px, 4vw, 30px); letter-spacing: .1em; white-space: nowrap; }
+
+    .lead { margin-top: 28px; text-align: center; }
+    .lead h1 { font-size: clamp(28px, 7vw, 44px); font-weight: 900; letter-spacing: .04em; line-height: 1.25; }
+    .lead p { margin-top: 10px; font-size: 17px; color: var(--ink-soft); }
+    .cta { margin-top: 22px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 24px;
+      border-radius: 999px; font-size: 17px; font-weight: 900; text-decoration: none; letter-spacing: .04em;
+      border: 2px solid var(--ink); color: var(--ink); background: #fff;
+    }
+    .btn.primary { background: var(--teal); border-color: var(--teal); color: #10302c; }
+    .btn:focus-visible { outline: 3px solid var(--teal-dark); outline-offset: 3px; }
+    .facts { margin-top: 26px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    .fact { background: var(--teal-soft); color: var(--teal-dark); font-weight: 700; font-size: 14px; padding: 6px 14px; border-radius: 999px; }
+
+    /* ===== 怎麼剪 ===== */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; counter-reset: s; }
+    .step { background: #fff; border-radius: 18px; padding: 20px 16px; text-align: center; counter-increment: s; }
+    .step::before {
+      content: counter(s); display: grid; place-items: center; width: 36px; height: 36px; margin: 0 auto 10px;
+      border-radius: 50%; background: var(--teal); color: #fff; font-weight: 900; font-size: 18px;
+    }
+    .step b { display: block; font-size: 18px; font-weight: 900; }
+    .step span { display: block; margin-top: 4px; font-size: 14px; color: var(--ink-soft); }
+
+    /* ===== 設計師 ===== */
+    .team { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .member { background: #fff; border-radius: 18px; overflow: hidden; }
+    .member img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; display: block; background: var(--teal-soft); }
+    .member div { padding: 12px 14px 16px; }
+    .member .name { font-size: 20px; font-weight: 900; letter-spacing: .04em; }
+    .member .role { display: inline-block; margin-left: 6px; font-size: 12px; font-weight: 700; color: var(--teal-dark); vertical-align: 3px; }
+    .member .shift { margin-top: 4px; font-size: 14px; color: var(--ink-soft); }
+    .member .shift b { color: var(--ink); font-weight: 700; }
+    .note { margin-top: 14px; font-size: 14px; color: var(--ink-soft); }
+    .note a { color: var(--teal-dark); font-weight: 700; }
+
+    /* ===== 店家資訊 ===== */
+    .info { background: #fff; border-radius: 18px; overflow: hidden; }
+    .row { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-top: 1px solid var(--line); text-decoration: none; }
+    .row:first-child { border-top: 0; }
+    .row .k { flex: 0 0 72px; font-size: 14px; color: var(--ink-soft); }
+    .row .v { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; }
+    .row .go { color: var(--teal-dark); font-weight: 900; white-space: nowrap; font-size: 14px; }
+
+    footer { padding: 28px 0 40px; text-align: center; font-size: 13px; color: var(--ink-soft); }
+
+    @media (max-width: 720px) {
+      .team { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      section { padding: 32px 0; }
+      .steps { grid-template-columns: 1fr; }
+      .step { display: grid; grid-template-columns: 36px 1fr; column-gap: 14px; text-align: left; align-items: center; padding: 14px 16px; }
+      .step::before { margin: 0; grid-row: span 2; }
+      .step span { margin-top: 0; }
+      .sign-logo { padding: 10px 4px 6px 10px; }
+      .sign-price { border-top-left-radius: 28px 100%; border-bottom-left-radius: 28px 100%; padding-left: 14px; }
+      .btn { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="sign">
+        <div class="sign-logo">
+          <svg viewBox="150 36 670 360" role="img" aria-label="請進 HAIR CUT PLEASE COME IN">
+            <!-- 鏡框：黑色外框，裡面一塊湖水綠 -->
+            <polygon points="208,60 322,60 322,250 236,224" fill="#5fb4aa"/>
+            <polyline points="322,96 322,52 164,52 190,264 312,264" fill="none" stroke="#1d1f22" stroke-width="7"/>
+          
+            <g fill="#1d1f22">
+              <!-- 「請」的言字旁：綁小馬尾的人，身體是倒梯形 -->
+              <circle cx="316" cy="130" r="43"/>
+              <path d="M284 108 C 266 98, 250 104, 239 118 C 256 115, 270 122, 288 134 Z"/>
+              <rect x="329" y="166" width="12" height="20"/>
+              <polygon points="294,182 358,182 358,273 322,273"/>
+              <polygon points="322,270 356,270 386,315 306,315"/>
+          
+              <!-- 「請」的青 -->
+              <rect x="420" y="103" width="13" height="84"/>
+              <rect x="365" y="116" width="133" height="13"/>
+              <rect x="372" y="147" width="119" height="13"/>
+              <rect x="359" y="175" width="154" height="13"/>
+              <rect x="397" y="200" width="13" height="112"/>
+              <rect x="397" y="200" width="109" height="12"/>
+              <rect x="493" y="200" width="13" height="105"/>
+              <rect x="478" y="294" width="28" height="11"/>
+              <rect x="404" y="228" width="94" height="11"/>
+              <rect x="404" y="258" width="94" height="11"/>
+          
+              <!-- 「進」的辵字旁：兩邊翹髮尾的短髮人，身體加寬，下面往右延伸的斜底 -->
+              <path d="M594 100 C 626 100, 642 124, 640 152 C 639 168, 636 178, 644 192 C 630 190, 620 185, 610 185 L 578 185 C 566 185, 560 181, 545 186 C 554 173, 551 158, 551 146 C 551 118, 566 100, 594 100 Z"/>
+              <polygon points="597,187 627,187 660,289 597,289"/>
+              <polygon points="597,302 802,299 597,323"/>
+          
+              <!-- 「進」的隹：上面一點、左上一撇、四橫 -->
+              <polygon points="690,139 728,157 722,168 687,150"/>
+              <polygon points="655,136 667,136 667,182 655,182"/>
+              <polygon points="655,176 668,182 648,215 635,207"/>
+              <rect x="669" y="171" width="12" height="124"/>
+              <rect x="716" y="171" width="12" height="118"/>
+              <rect x="669" y="171" width="104" height="13"/>
+              <rect x="681" y="206" width="92" height="13"/>
+              <rect x="681" y="240" width="95" height="13"/>
+              <rect x="681" y="276" width="115" height="14"/>
+            </g>
+          
+            <!-- HAIR CUT ✂ PLEASE COME IN -->
+            <g transform="skewX(-14)" font-family="Noto Sans TC, sans-serif" font-weight="500" fill="#1d1f22" font-size="31">
+              <text x="300" y="382" textLength="180" lengthAdjust="spacingAndGlyphs">HAIR CUT</text>
+              <text x="573" y="382" textLength="312" lengthAdjust="spacing">PLEASE COME IN</text>
+            </g>
+            <!-- 剪刀 -->
+            <g transform="translate(436 370) rotate(-20)" fill="none" stroke-width="3.2">
+              <circle cx="-7" cy="-9" r="5.5" stroke="#1d1f22"/>
+              <circle cx="-7" cy="9" r="5.5" stroke="#1d1f22"/>
+              <path d="M-2 -6 L 16 6 M-2 6 L 16 -6" stroke="#5fb4aa" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+        <div class="sign-price"><b>$120</b><span>佰二剪髮</span></div>
+      </div>
+
+      <div class="lead">
+        <h1>快速剪髮，不用預約</h1>
+        <p>投幣抽號碼牌，手機就能看現在叫到幾號。</p>
+        <div class="cta">
+          <a class="btn primary" href="./">看現在叫到幾號 →</a>
+          <a class="btn" href="tel:0982283384">打電話</a>
+        </div>
+        <div class="facts">
+          <span class="fact">剪髮 $120</span>
+          <span class="fact">09:30–22:30</span>
+          <span class="fact">永和永平路</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="wrap">
+        <h2><small>HOW IT WORKS</small>怎麼剪</h2>
+        <div class="steps">
+          <div class="step"><b>投幣拿號碼牌</b><span>抽號機在門口，不用預約</span></div>
+          <div class="step"><b>手機看叫號</b><span>掃門口 QR Code，不用下載 App</span></div>
+          <div class="step"><b>快輪到再回來</b><span>不用在店裡乾等</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2><small>OUR TEAM</small>設計師</h2>
+        <div class="team">
+          <article class="member">
+            <img src="img/team/jiang.jpg" alt="店長江江" loading="lazy" width="480" height="480" />
+            <div><span class="name">江江</span><span class="role">店長</span><p class="shift"><b>全班</b>　09:30–22:30</p></div>
+          </article>
+          <article class="member">
+            <img src="img/team/chien.jpg" alt="設計師琪恩" loading="lazy" width="480" height="480" />
+            <div><span class="name">琪恩</span><span class="role">設計師</span><p class="shift"><b>早班</b>　09:30–21:30</p></div>
+          </article>
+          <article class="member">
+            <img src="img/team/tim.jpg" alt="設計師 Tim" loading="lazy" width="480" height="480" />
+            <div><span class="name">Tim</span><span class="role">設計師</span><p class="shift"><b>中班</b>　11:00–22:30</p></div>
+          </article>
+          <article class="member">
+            <img src="img/team/katie.jpg" alt="設計師凱蒂" loading="lazy" width="480" height="480" />
+            <div><span class="name">凱蒂</span><span class="role">設計師</span><p class="shift"><b>晚班</b>　12:00–22:30</p></div>
+          </article>
+        </div>
+        <p class="note">設計師每月排休，今天誰在店裡、誰休假，可以在 <a href="./">看號碼頁面</a> 查看。抽號時可以指定設計師。</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2><small>VISIT US</small>店家資訊</h2>
+        <div class="info">
+          <div class="row"><span class="k">價格</span><span class="v">剪髮 $120</span></div>
+          <div class="row"><span class="k">營業時間</span><span class="v">09:30–22:30</span></div>
+          <a class="row" href="https://www.google.com/maps/search/?api=1&query=%E8%AB%8B%E9%80%B2%20%E5%BF%AB%E5%89%AA%20%E6%96%B0%E5%8C%97%E5%B8%82%E6%B0%B8%E5%92%8C%E5%8D%80%E6%B0%B8%E5%B9%B3%E8%B7%AF180%E5%B7%B71%E8%99%9F" target="_blank" rel="noopener">
+            <span class="k">地址</span><span class="v">新北市永和區永平路 180 巷 1 號 1F</span><span class="go">地圖 ›</span>
+          </a>
+          <a class="row" href="tel:0982283384"><span class="k">電話</span><span class="v">0982 283 384</span><span class="go">撥打 ›</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">請進快剪 PLEASE COME IN・$120 佰二剪髮</div>
+  </footer>
+</body>
+</html>
