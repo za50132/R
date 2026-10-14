@@ -52,15 +52,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
   padding: 14px 12px 12px 16px;
 }
 .sign-mark { width: 40px; height: 40px; flex: none; }
-/* 店門口招牌的 logo（向量重繪） */
-.sign-logo { display: block; height: clamp(54px, 15vw, 66px); width: auto; max-width: 100%; }
-.sign-left:has(.sign-logo) { flex: 1 1 auto; min-width: 0; padding: 6px 6px 4px 12px; }
-.sign:has(.sign-logo) .sign-right {
-  flex: 0 0 30%; flex-direction: column; gap: 0; padding: 6px 8px 6px 16px;
-  border-top-left-radius: 22px 100%; border-bottom-left-radius: 22px 100%;
-}
-.sign:has(.sign-logo) .sign-price { font-size: clamp(17px, 5vw, 22px); }
-.sign:has(.sign-logo) .sign-word { font-size: clamp(11px, 3.4vw, 14px); letter-spacing: .06em; }
+/* 店門口招牌的 logo（向量重繪）：招牌整體維持原本的高度，右邊價格照舊 */
+.sign-logo { display: block; height: 68px; width: auto; }
+.sign-left:has(.sign-logo) { padding: 6px 6px 4px 12px; }
+@media (max-width: 360px) { .sign-logo { height: 63px; } }
 .sign-name { font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: .08em; }
 .sign-en { font-size: 9px; letter-spacing: .14em; color: var(--ink-soft); margin-top: 6px; white-space: nowrap; }
 .sign-right {
