@@ -27,11 +27,60 @@
   <main class="wrap">
     <header class="sign" aria-label="請進 PLEASE COME IN ｜ $120 佰二剪髮">
       <div class="sign-left">
-        <img class="sign-mark" src="img/mark.svg" alt="" />
-        <div>
-          <div class="sign-name" id="shopName">請進</div>
-          <div class="sign-en" id="shopEn">PLEASE COME IN</div>
-        </div>
+        <svg class="sign-logo" viewBox="150 36 670 360" role="img" aria-label="請進 HAIR CUT PLEASE COME IN">
+          <!-- 鏡框：黑色外框，裡面一塊湖水綠 -->
+          <polygon points="208,60 322,60 322,250 236,224" fill="#5fb4aa"/>
+          <polyline points="322,96 322,52 164,52 190,264 312,264" fill="none" stroke="#1d1f22" stroke-width="7"/>
+        
+          <g fill="#1d1f22">
+            <!-- 「請」的言字旁：綁小馬尾的人，身體是倒梯形 -->
+            <circle cx="316" cy="130" r="43"/>
+            <path d="M284 108 C 266 98, 250 104, 239 118 C 256 115, 270 122, 288 134 Z"/>
+            <rect x="329" y="166" width="12" height="20"/>
+            <polygon points="294,182 358,182 358,273 322,273"/>
+            <polygon points="322,270 356,270 386,315 306,315"/>
+        
+            <!-- 「請」的青 -->
+            <rect x="420" y="103" width="13" height="84"/>
+            <rect x="365" y="116" width="133" height="13"/>
+            <rect x="372" y="147" width="119" height="13"/>
+            <rect x="359" y="175" width="154" height="13"/>
+            <rect x="397" y="200" width="13" height="112"/>
+            <rect x="397" y="200" width="109" height="12"/>
+            <rect x="493" y="200" width="13" height="105"/>
+            <rect x="478" y="294" width="28" height="11"/>
+            <rect x="404" y="228" width="94" height="11"/>
+            <rect x="404" y="258" width="94" height="11"/>
+        
+            <!-- 「進」的辵字旁：兩邊翹髮尾的短髮人，身體加寬，下面往右延伸的斜底 -->
+            <path d="M594 100 C 626 100, 642 124, 640 152 C 639 168, 636 178, 644 192 C 630 190, 620 185, 610 185 L 578 185 C 566 185, 560 181, 545 186 C 554 173, 551 158, 551 146 C 551 118, 566 100, 594 100 Z"/>
+            <polygon points="597,187 627,187 660,289 597,289"/>
+            <polygon points="597,302 802,299 597,323"/>
+        
+            <!-- 「進」的隹：上面一點、左上一撇、四橫 -->
+            <polygon points="690,139 728,157 722,168 687,150"/>
+            <polygon points="655,136 667,136 667,182 655,182"/>
+            <polygon points="655,176 668,182 648,215 635,207"/>
+            <rect x="669" y="171" width="12" height="124"/>
+            <rect x="716" y="171" width="12" height="118"/>
+            <rect x="669" y="171" width="104" height="13"/>
+            <rect x="681" y="206" width="92" height="13"/>
+            <rect x="681" y="240" width="95" height="13"/>
+            <rect x="681" y="276" width="115" height="14"/>
+          </g>
+        
+          <!-- HAIR CUT ✂ PLEASE COME IN -->
+          <g transform="skewX(-14)" font-family="Noto Sans TC, sans-serif" font-weight="500" fill="#1d1f22" font-size="31">
+            <text x="300" y="382" textLength="180" lengthAdjust="spacingAndGlyphs">HAIR CUT</text>
+            <text x="573" y="382" textLength="312" lengthAdjust="spacing">PLEASE COME IN</text>
+          </g>
+          <!-- 剪刀 -->
+          <g transform="translate(436 370) rotate(-20)" fill="none" stroke-width="3.2">
+            <circle cx="-7" cy="-9" r="5.5" stroke="#1d1f22"/>
+            <circle cx="-7" cy="9" r="5.5" stroke="#1d1f22"/>
+            <path d="M-2 -6 L 16 6 M-2 6 L 16 -6" stroke="#5fb4aa" stroke-linecap="round"/>
+          </g>
+        </svg>
       </div>
       <div class="sign-right">
         <span class="sign-price num">$120</span>
@@ -70,20 +119,9 @@
     <h2 class="section-title">設計師</h2>
     <section class="grid" id="designers"></section>
 
-    <h2 class="section-title">什麼時候來最不用等</h2>
-    <section class="card crowd">
-      <div class="dow-tabs" id="dowTabs" role="tablist" aria-label="選擇星期"></div>
-      <div id="crowdBody"></div>
-    </section>
-
     <h2 class="section-title">近期休假</h2>
     <section class="card">
       <ul class="offlist" id="offList"></ul>
-    </section>
-
-    <h2 class="section-title">班表</h2>
-    <section class="card">
-      <div class="shifts" id="shifts"></div>
     </section>
 
     <h2 class="section-title">店家資訊</h2>

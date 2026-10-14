@@ -52,6 +52,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
   padding: 14px 12px 12px 16px;
 }
 .sign-mark { width: 40px; height: 40px; flex: none; }
+/* 店門口招牌的 logo（向量重繪） */
+.sign-logo { display: block; width: 100%; height: auto; max-height: 120px; }
+.sign-left:has(.sign-logo) { flex: 1 1 auto; min-width: 0; padding: 8px 6px 6px 10px; }
+.sign:has(.sign-logo) .sign-right {
+  flex: 0 0 32%; flex-direction: column; gap: 0; padding: 8px 8px 8px 18px;
+  border-top-left-radius: 26px 100%; border-bottom-left-radius: 26px 100%;
+}
+.sign:has(.sign-logo) .sign-price { font-size: clamp(20px, 6.4vw, 28px); }
+.sign:has(.sign-logo) .sign-word { font-size: clamp(13px, 4vw, 18px); letter-spacing: .06em; }
 .sign-name { font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: .08em; }
 .sign-en { font-size: 9px; letter-spacing: .14em; color: var(--ink-soft); margin-top: 6px; white-space: nowrap; }
 .sign-right {
