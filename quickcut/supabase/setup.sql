@@ -36,6 +36,10 @@ create table if not exists public.designers (
   primary key (shop_id, id)
 );
 
+-- 手動上/下班：蓋過班表時段的自動判斷（例如超時留下來、或提早下班）
+alter table public.designers drop constraint if exists designers_status_check;
+alter table public.designers add constraint designers_status_check check (status in ('working', 'break', 'off_duty'));
+
 -- 最後叫號時間：用來判斷設計師是否空檔中（「現在人少」提示）
 alter table public.designers add column if not exists called_at timestamptz;
 
@@ -222,6 +226,7 @@ end $$;
 --     skip           過號：這位客人沒出現，直接叫下一位
 --     call           叫指定號碼 p_number（例如過號的客人回來了）
 --     undo           退回上一次叫號
+--     clock_in / clock_out   上班、下班：蓋過班表時段的自動判斷（超時留下來、提早下班用）
 --     break / back / toggle_break   休息、回來
 --
 --   其他：ping / status / set_wait（p_number = 分鐘數）
@@ -476,6 +481,18 @@ begin
     end if;
     return json_build_object('ok', true, 'number', l.prev_number,
                              'message', d.name || ' 已退回，目前 ' || qc_fmt(l.prev_number));
+
+  elsif p_action in ('clock_in', 'clock_out') then
+    update designers
+       set status = case when p_action = 'clock_out' then 'off_duty' else 'working' end,
+           current_number = case when p_action = 'clock_out' then null else current_number end,
+           called_at = case when p_action = 'clock_out' then null else called_at end,
+           updated_at = now()
+     where shop_id = p_shop and id = p_designer;
+    update shops set updated_at = now() where id = p_shop;
+    insert into call_log (shop_id, designer_id, action) values (p_shop, p_designer, p_action);
+    return json_build_object('ok', true,
+                             'message', d.name || case when p_action = 'clock_out' then ' 已下班' else ' 已上班' end);
 
   elsif p_action in ('break', 'back', 'toggle_break') then
     if p_action = 'toggle_break' then

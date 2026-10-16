@@ -53,6 +53,7 @@
   function designerView(d, state, now = taipeiNow()) {
     const live = state.designers[d.id] || { status: 'working', number: null, calledAt: null };
     if (isOff(state, d.id, now.date)) return { kind: 'off', label: '今日休假', number: null };
+    if (live.status === 'off_duty') return { kind: 'away', label: '已下班', number: null };
     if (now.minutes < toMin(d.start)) return { kind: 'away', label: `${d.start} 上班`, number: null };
     if (now.minutes >= toMin(d.end)) return { kind: 'away', label: '已下班', number: null };
     if (live.status === 'break') return { kind: 'break', label: '休息中', number: live.number };

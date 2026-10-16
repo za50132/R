@@ -146,7 +146,9 @@
   async function callNext(id) {
     const d = designer(id);
     const v = designerView(d, state, taipeiNow());
-    if ((v.kind === 'off' || v.kind === 'away') && !await ask(`${d.name} ${v.kind === 'off' ? '今天休假' : '目前不在班'}，還是要叫號嗎？`, '叫號')) return;
+    // 不在班表時段內（或手動下班）：點一下＝直接讓他上班，蓋過班表時間，不是叫號
+    if (v.kind === 'away') { act(id, 'clock_in'); return; }
+    if (v.kind === 'off' && !await ask(`${d.name} 今天休假，還是要叫號嗎？`, '叫號')) return;
     await act(id, 'next', null, () => act(id, 'undo'));
   }
 
@@ -181,8 +183,11 @@
     sheetWho = id;
     const d = designer(id);
     const live = (state && state.designers[id]) || {};
+    const v = designerView(d, state, taipeiNow());
     $('dsTitle').textContent = `${d.name}・目前 ${pad3(live.number)} 號`;
+    $('dsShift').textContent = v.kind === 'away' ? '上班' : '下班';
     $('dsBreak').textContent = live.status === 'break' ? '回來上工' : '休息';
+    $('dsBreak').disabled = v.kind === 'away';
     $('dsSkip').disabled = !live.number;
     $('dsheet').showModal();
   }
@@ -191,6 +196,11 @@
     $('dsheet').close();
     const cur = (state.designers[sheetWho] || {}).number;
     if (await ask(`${pad3(cur)} 號沒出現？過號並叫下一位`, '過號')) act(sheetWho, 'skip');
+  });
+  $('dsShift').addEventListener('click', () => {
+    $('dsheet').close();
+    const v = designerView(designer(sheetWho), state, taipeiNow());
+    act(sheetWho, v.kind === 'away' ? 'clock_in' : 'clock_out');
   });
   $('dsBreak').addEventListener('click', () => { $('dsheet').close(); act(sheetWho, 'toggle_break'); });
   $('dsUndo').addEventListener('click', async () => {
