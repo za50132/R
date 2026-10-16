@@ -239,7 +239,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .shifts .s-name { font-weight: 700; }
 .shifts .s-shift { color: var(--muted); }
 
-.foot { text-align: center; font-size: 12px; color: var(--muted); margin-top: 28px; }
 .demo-banner {
   background: #fff6e6;
   color: #8a5a14;
