@@ -18,8 +18,8 @@
     const fresh = raw.day !== today;
     const designers = {};
     for (const d of raw.designers) {
-      designers[d.id] = fresh ? { status: 'working', number: null, calledAt: null }
-                              : { status: d.status, number: d.current_number,
+      designers[d.id] = fresh ? { status: 'working', shiftState: 'auto', number: null, calledAt: null }
+                              : { status: d.status, shiftState: d.shift_state, number: d.current_number,
                                   calledAt: d.called_at ? Date.parse(d.called_at) : null };
     }
     return {
@@ -50,7 +50,7 @@
       const from = taipeiNow().date;
       const [s, d, o, t] = await Promise.all([
         client.from('shops').select('day,last_called,last_issued,wait_minutes,wait_set_at').eq('id', shopId).single(),
-        client.from('designers').select('id,status,current_number,called_at').eq('shop_id', shopId),
+        client.from('designers').select('id,status,current_number,called_at,shift_state').eq('shop_id', shopId),
         client.from('days_off').select('designer_id,day').eq('shop_id', shopId)
           .gte('day', from).lte('day', QC.addDays(from, 200)),
         client.from('tickets').select('*').eq('shop_id', shopId).eq('day', from),

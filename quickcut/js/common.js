@@ -51,11 +51,14 @@
   // 設計師在客人眼中的狀態
   //   free = true 代表「應該空檔中」：在班、沒休息、而且超過 idleMinutes 沒叫號
   function designerView(d, state, now = taipeiNow()) {
-    const live = state.designers[d.id] || { status: 'working', number: null, calledAt: null };
+    const live = state.designers[d.id] || { status: 'working', shiftState: 'auto', number: null, calledAt: null };
     if (isOff(state, d.id, now.date)) return { kind: 'off', label: '今日休假', number: null };
-    if (live.status === 'off_duty') return { kind: 'away', label: '已下班', number: null };
-    if (now.minutes < toMin(d.start)) return { kind: 'away', label: `${d.start} 上班`, number: null };
-    if (now.minutes >= toMin(d.end)) return { kind: 'away', label: '已下班', number: null };
+    if (live.shiftState === 'off') return { kind: 'away', label: '已下班', number: null };
+    // 手動上班（shiftState === 'on'）要蓋過班表時段，才不會超時留下來又被判斷成已下班
+    if (live.shiftState !== 'on') {
+      if (now.minutes < toMin(d.start)) return { kind: 'away', label: `${d.start} 上班`, number: null };
+      if (now.minutes >= toMin(d.end)) return { kind: 'away', label: '已下班', number: null };
+    }
     if (live.status === 'break') return { kind: 'break', label: '休息中', number: live.number };
 
     const idleMinutes = (window.QC_CONFIG && window.QC_CONFIG.idleMinutes) || 20;

@@ -36,9 +36,11 @@ create table if not exists public.designers (
   primary key (shop_id, id)
 );
 
--- 手動上/下班：蓋過班表時段的自動判斷（例如超時留下來、或提早下班）
-alter table public.designers drop constraint if exists designers_status_check;
-alter table public.designers add constraint designers_status_check check (status in ('working', 'break', 'off_duty'));
+-- 手動上/下班：auto＝照 config.js 的班表時段自動判斷（原本的行為）；
+-- on/off＝店內人員手動蓋過班表時段（超時留下來、或提早下班）。
+-- 跟 status（休息／工作中）是分開的兩件事：status 是「人在不在崗位上」，shift_state 是「要不要照班表判斷」。
+alter table public.designers add column if not exists shift_state text not null default 'auto'
+  check (shift_state in ('auto', 'on', 'off'));
 
 -- 最後叫號時間：用來判斷設計師是否空檔中（「現在人少」提示）
 alter table public.designers add column if not exists called_at timestamptz;
@@ -134,7 +136,7 @@ begin
   update shops set day = qc_today(), last_called = 0, last_issued = 0, wait_minutes = null, wait_set_at = null, updated_at = now()
    where id = p_shop and day <> qc_today();
   if found then
-    update designers set current_number = null, called_at = null, status = 'working', updated_at = now()
+    update designers set current_number = null, called_at = null, status = 'working', shift_state = 'auto', updated_at = now()
      where shop_id = p_shop;
   end if;
 end $$;
@@ -484,7 +486,7 @@ begin
 
   elsif p_action in ('clock_in', 'clock_out') then
     update designers
-       set status = case when p_action = 'clock_out' then 'off_duty' else 'working' end,
+       set shift_state = case when p_action = 'clock_out' then 'off' else 'on' end,
            current_number = case when p_action = 'clock_out' then null else current_number end,
            called_at = case when p_action = 'clock_out' then null else called_at end,
            updated_at = now()
@@ -560,7 +562,7 @@ begin
     select p_shop, 'reset', last_called from shops where id = p_shop;
     delete from tickets where shop_id = p_shop and day = qc_today();
     update shops set last_called = 0, last_issued = 0, wait_minutes = null, wait_set_at = null, updated_at = now() where id = p_shop;
-    update designers set current_number = null, called_at = null, status = 'working', updated_at = now() where shop_id = p_shop;
+    update designers set current_number = null, called_at = null, status = 'working', shift_state = 'auto', updated_at = now() where shop_id = p_shop;
     return json_build_object('ok', true, 'message', '已歸零，下一位從 001 開始');
 
   elsif p_action in ('set_staff_pin', 'set_owner_pin') then
