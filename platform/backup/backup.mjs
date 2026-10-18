@@ -1,8 +1,9 @@
 // 客戶資料備份：把共用資料庫裡「每一家客戶」的資料各自匯出成一個資料夾。
 //
-// 所有客戶共用同一個 Supabase 專案，用 shop_id 分開。這支程式會：
-//   1. 找出資料庫裡所有客戶（shops 表的每一列）
-//   2. 找出所有「有 shop_id 欄位」的資料表（以後新行業的資料表只要有 shop_id 就會自動備份）
+// 所有客戶共用同一個 Supabase 專案，用客戶代號分開。這支程式會：
+//   1. 找出所有客戶（客戶名冊 clients；還沒有名冊的舊資料庫用 shops）
+//   2. 找出所有帶客戶代號的資料表：有 client_id 或 shop_id 欄位的表，加上 clients / shops 本身
+//      （以後新系統的資料表只要有 client_id 欄位就會自動備份）
 //   3. 每家客戶各寫一個資料夾 data/<客戶代號>/latest/：每張表一份 CSV（Excel 直接開）
 //      ＋ JSON（完整型別，還原用）＋ manifest.md（這次備份了幾筆）
 //   4. 每月 1 號另外留一份 data/<客戶代號>/archive/YYYY-MM/，不靠 git 也找得到月底資料
@@ -69,12 +70,13 @@ async function listClientTables(client) {
      order by c.table_name`);
   return rows
     .filter((r) => !SKIP_TABLES.has(r.table_name))
-    .filter((r) => r.table_name === "shops" || r.columns.includes("shop_id"));
+    .filter((r) => ["clients", "shops"].includes(r.table_name) || r.columns.includes("client_id") || r.columns.includes("shop_id"))
+    .map((r) => ({ ...r, key: ["clients", "shops"].includes(r.table_name) ? "id" : r.columns.includes("client_id") ? "client_id" : "shop_id" }));
 }
 
 // 排序：有時間欄位就照時間，沒有就照第一欄，備份檔比較好對照
 function orderBy(columns) {
-  for (const c of ["created_at", "issued_at", "day", "sort", "number", "id"]) if (columns.includes(c)) return quoteIdent(c);
+  for (const c of ["occurred_at", "created_at", "issued_at", "day", "sort", "number", "id"]) if (columns.includes(c)) return quoteIdent(c);
   return quoteIdent(columns[0]);
 }
 
@@ -111,7 +113,8 @@ async function main() {
   try {
     await client.query("set default_transaction_read_only = on"); // 備份只讀，絕不寫入
     const tables = await listClientTables(client);
-    const { rows: shops } = await client.query("select id from shops order by id");
+    const registry = tables.some((t) => t.table_name === "clients") ? "clients" : "shops";
+    const { rows: shops } = await client.query(`select id from ${registry} order by id`);
     log(`共 ${shops.length} 家客戶、${tables.length} 張資料表：${tables.map((t) => t.table_name).join(", ")}`);
 
     const summary = [];
@@ -121,7 +124,7 @@ async function main() {
       mkdirSync(latest, { recursive: true });
       const counts = {};
       for (const t of tables) {
-        const where = t.table_name === "shops" ? "id = $1" : "shop_id = $1";
+        const where = `${quoteIdent(t.key)} = $1`;
         const { rows } = await client.query(
           `select * from ${quoteIdent(t.table_name)} where ${where} order by ${orderBy(t.columns)}`, [shop.id]);
         writeFileSync(join(latest, `${t.table_name}.csv`), toCsv(t.columns, rows), "utf8");
