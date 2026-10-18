@@ -1,3 +1,8 @@
 {
-  "qingjin": { "name": "請進快剪", "industry": "快剪", "since": "2026-10-08" }
+  "qingjin": {
+    "name": "請進快剪",
+    "industry": "快剪",
+    "since": "2026-10-19",
+    "note": "10/8～10/18 是測試期，報表從 since 開始算"
+  }
 }
