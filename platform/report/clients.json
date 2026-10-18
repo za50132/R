@@ -2,8 +2,8 @@
   "qingjin": {
     "name": "請進",
     "industry": "快剪",
-    "since": "2026-10-19",
-    "note": "10/8～10/18 是測試期，報表從 since 開始算",
+    "since": null,
+    "note": "正式啟用日期待定（使用者之後提供）；在那之前的資料都視為測試",
     "systems": [
       "queue"
     ]
