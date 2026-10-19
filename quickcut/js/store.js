@@ -214,12 +214,8 @@
       const who = designer ? nameOf(designer) : null;
       if (action === 'issue') {
         const maxN = cfg.maxNumber || 999;
-        const blocked = (num) => db.tickets.find((t) => t.number === num && !['waiting', 'cancelled'].includes(t.status));
         let n = s.last_issued + 1;
         if (n > maxN) n = 1;
-        let tries = 0;
-        while (tries < maxN && blocked(n)) { n += 1; if (n > maxN) n = 1; tries += 1; }
-        if (tries >= maxN) return fail(`${maxN} 個號碼都在服務中，請店長歸零或檢查現場`);
         const existing = db.tickets.find((t) => t.number === n);
         if (existing) {
           Object.assign(existing, { designer_id: designer || null, status: 'waiting', served_by: null,

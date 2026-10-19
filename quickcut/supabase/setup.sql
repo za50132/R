@@ -255,7 +255,6 @@ declare
   n     int;
   prev  int;
   added int;
-  tries int;
   msg   text;
   who   text;
   today date := qc_today();
@@ -308,23 +307,8 @@ begin
   if p_action = 'issue' then
     n := s.last_issued + 1;
     if n > s.max_number then n := 1; end if;
-    -- 號碼牌上限內繞圈找一個「沒人服務過」的號碼：正常情況第一個就是；只有發到上限
-    -- 繞回去、或店長用「修改已發號碼」改小過，才可能撞到舊號碼牌——還沒人用過的
-    -- 直接蓋掉重發（下面 on conflict），已經服務過的跳過找下一個。
-    tries := 0;
-    while tries < s.max_number and exists (
-      select 1 from tickets
-       where shop_id = p_shop and day = today and number = n
-         and status not in ('waiting', 'cancelled')
-    ) loop
-      n := n + 1;
-      if n > s.max_number then n := 1; end if;
-      tries := tries + 1;
-    end loop;
-    if tries >= s.max_number then
-      return json_build_object('ok', false, 'message',
-        s.max_number || ' 個號碼都在服務中，請店長歸零或檢查現場');
-    end if;
+    -- 發到上限直接繞回 1 號重發，不管那個號碼目前是什麼狀態都直接蓋掉
+    -- （信任等繞回同一個號碼時，上一輪那位客人早就服務完了）。
     insert into tickets (shop_id, day, number, designer_id) values (p_shop, today, n, p_designer)
     on conflict (shop_id, day, number) do update
       set designer_id = excluded.designer_id, status = 'waiting', served_by = null,
