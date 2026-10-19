@@ -396,6 +396,13 @@
     const r = await ownerAct('set_issued', { number: n });
     if (r.ok) $('setIssuedInput').value = '';
   });
+  $('recallForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const n = parseInt($('recallInput').value, 10);
+    if (Number.isNaN(n)) return;
+    const r = await ownerAct('recall_ticket', { number: n });
+    if (r.ok) $('recallInput').value = '';
+  });
   $('btnReset').addEventListener('click', async () => {
     if (await ask('確定把今天的號碼歸零？等候名單和所有設計師的號碼都會清空。', '歸零')) ownerAct('reset_today');
   });

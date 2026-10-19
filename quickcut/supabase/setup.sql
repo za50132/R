@@ -300,10 +300,22 @@ begin
   select name into who from designers where shop_id = p_shop and id = p_designer;
 
   if p_action = 'issue' then
-    n := greatest(s.last_issued,
-                  coalesce((select max(number) from tickets where shop_id = p_shop and day = today), 0)) + 1;
+    n := s.last_issued + 1;
+    -- 正常情況這號不會有舊紀錄；只有店長用「修改已發號碼」改小過，才可能剛好
+    -- 撞到舊的、還沒人用過的號碼牌，這種情況直接蓋掉重發（下面 on conflict）。
+    -- 如果撞到的是已經服務過的號碼（理論上不會發生，防呆用），跳號找下一個真正沒發過的。
+    while exists (
+      select 1 from tickets
+       where shop_id = p_shop and day = today and number = n
+         and status not in ('waiting', 'cancelled')
+    ) loop
+      n := n + 1;
+    end loop;
     if n > 999 then return json_build_object('ok', false, 'message', '號碼已到 999，請店長歸零'); end if;
-    insert into tickets (shop_id, day, number, designer_id) values (p_shop, today, n, p_designer);
+    insert into tickets (shop_id, day, number, designer_id) values (p_shop, today, n, p_designer)
+    on conflict (shop_id, day, number) do update
+      set designer_id = excluded.designer_id, status = 'waiting', served_by = null,
+          issued_at = now(), called_at = null, finished_at = null, sort_key = null, assigned = false;
     update shops set last_issued = n, updated_at = now() where id = p_shop;
     insert into call_log (shop_id, designer_id, action, number) values (p_shop, p_designer, 'issue', n);
     return json_build_object('ok', true, 'number', n, 'waiting', qc_waiting(p_shop),
@@ -514,7 +526,7 @@ end $$;
 
 -- ---------------------------------------------------------------------
 -- 店長操作
---   p_action: ping / day_off / day_on / set_number / set_issued / reset_today / set_staff_pin / set_owner_pin
+--   p_action: ping / day_off / day_on / set_number / set_issued / recall_ticket / reset_today / set_staff_pin / set_owner_pin
 -- ---------------------------------------------------------------------
 create or replace function public.owner_action(
   p_shop     text,
@@ -565,15 +577,31 @@ begin
       -- 改大：跟操作頁的補號一樣，中間缺的號碼補成不指定
       perform qc_fill_to(p_shop, p_number);
     else
-      -- 改小：多發、還沒人等的號碼牌直接刪掉，讓這些號碼可以重新發
-      -- （已經在服務中、已完成、過號的不會動，之後再發號還是會自動避開這些號碼）
-      delete from tickets
-       where shop_id = p_shop and day = qc_today() and number > p_number and status = 'waiting';
+      -- 改小：只改「已發」這個數字，不動 tickets 表。多發的號碼牌還是會留在等候
+      -- 名單上；之後真的發號發到那個號碼時，staff_action 的 issue 會自動蓋掉重發
+      -- （見上面 issue 的註解），不用擔心撞號，也不用先手動清掉。
       insert into call_log (shop_id, action, number, prev_last_called)
       select p_shop, 'set_issued', p_number, last_issued from shops where id = p_shop;
       update shops set last_issued = p_number, updated_at = now() where id = p_shop;
     end if;
     return json_build_object('ok', true, 'message', '已發號碼改為 ' || qc_fmt(p_number));
+
+  elsif p_action = 'recall_ticket' then
+    if p_number is null or p_number < 1 or p_number > 999 then
+      return json_build_object('ok', false, 'message', '請輸入 1～999 的號碼');
+    end if;
+    if not exists (select 1 from tickets where shop_id = p_shop and day = qc_today() and number = p_number) then
+      return json_build_object('ok', false, 'message', qc_fmt(p_number) || ' 號今天不存在');
+    end if;
+    if exists (select 1 from tickets where shop_id = p_shop and day = qc_today() and number = p_number
+                 and status in ('waiting', 'serving')) then
+      return json_build_object('ok', false, 'message', qc_fmt(p_number) || ' 號目前就在等候或服務中，不用叫回');
+    end if;
+    update tickets set status = 'waiting', served_by = null, called_at = null, finished_at = null, sort_key = null
+     where shop_id = p_shop and day = qc_today() and number = p_number;
+    update shops set updated_at = now() where id = p_shop;
+    insert into call_log (shop_id, action, number) values (p_shop, 'recall_ticket', p_number);
+    return json_build_object('ok', true, 'message', qc_fmt(p_number) || ' 號已叫回，重新排進等候名單');
 
   elsif p_action = 'reset_today' then
     insert into call_log (shop_id, action, prev_last_called)

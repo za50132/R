@@ -154,10 +154,19 @@
 
       <div class="panel">
         <h3>修改已發號碼</h3>
-        <p class="hint">發號發錯、發太多的時候用。改小的話，還在等候中、還沒人服務的多發號碼牌會直接收回、可以重新發；已經在服務或完成的號碼不會動。</p>
+        <p class="hint">發號發錯、發太多的時候用。改小之後，多發的號碼牌還是會留在等候名單上，但下次真的發到那個號碼時會自動蓋掉重發，不用擔心撞號。</p>
         <form class="inline" id="setIssuedForm">
           <input class="field" id="setIssuedInput" type="number" inputmode="numeric" min="0" max="999" placeholder="例：20" />
           <button class="btn primary" type="submit">更新</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>叫回號碼</h3>
+        <p class="hint">單獨一張號碼牌被取消、標記完成，想把那一張叫回等候名單時用。輸入號碼，原本指定的設計師會保留。</p>
+        <form class="inline" id="recallForm">
+          <input class="field" id="recallInput" type="number" inputmode="numeric" min="1" max="999" placeholder="例：15" />
+          <button class="btn primary" type="submit">叫回</button>
         </form>
       </div>
 
