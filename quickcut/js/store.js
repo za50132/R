@@ -178,12 +178,19 @@
     const queue = (db) => db.tickets.filter((t) => t.status === 'waiting').sort((a, b) => key(a) - key(b) || a.number - b.number);
     const waiting = (db, who) => db.tickets.filter((t) => t.status === 'waiting' && (!who || t.designer_id === who)).length;
     function fillTo(db, upto) {
-      const from = Math.max(db.shop.last_issued, ...db.tickets.map((t) => t.number), 0) + 1;
+      const from = db.shop.last_issued + 1;
+      if (upto < from) return 0;
       for (let n = from; n <= upto; n++) {
-        db.tickets.push({ number: n, designer_id: null, status: 'waiting', served_by: null, issued_at: iso() });
+        const existing = db.tickets.find((t) => t.number === n);
+        if (existing) {
+          Object.assign(existing, { designer_id: null, status: 'waiting', served_by: null,
+            issued_at: iso(), called_at: null, finished_at: null, sort_key: undefined });
+        } else {
+          db.tickets.push({ number: n, designer_id: null, status: 'waiting', served_by: null, issued_at: iso() });
+        }
       }
-      db.shop.last_issued = Math.max(db.shop.last_issued, upto);
-      return Math.max(0, upto - from + 1);
+      db.shop.last_issued = upto;
+      return upto - from + 1;
     }
 
     window.addEventListener('storage', (e) => { if (e.key === KEY) emit(read()); });
@@ -314,7 +321,7 @@
       if (action === 'call') {
         const maxN = cfg.maxNumber || 999;
         if (!(number >= 1 && number <= maxN)) return fail(`請輸入 1～${maxN} 的號碼`);
-        if (number > s.last_issued) fillTo(db, number);
+        if (!ticket(db, number)) fillTo(db, number);
         const t = ticket(db, number);
         if (t.status === 'serving' && t.served_by !== designer) return fail(`${fmt(number)} 號正在由 ${nameOf(t.served_by)} 服務`);
         const cur = serving();

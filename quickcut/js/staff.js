@@ -240,8 +240,12 @@
     if (withNone) btns.push(`<button class="btn none ${selected === null ? 'on' : ''}" data-id="">不指定</button>`);
     return btns.join('');
   }
+  function nextIssueNumber() {
+    const maxN = cfg.maxNumber || 999;
+    return state ? (state.lastIssued % maxN) + 1 : 1;
+  }
   $('btnIssuePick').addEventListener('click', () => {
-    $('pickTitle').textContent = `加 ${pad3((state ? state.lastIssued : 0) + 1)} 號：指定哪位設計師？`;
+    $('pickTitle').textContent = `加 ${pad3(nextIssueNumber())} 號：指定哪位設計師？`;
     $('pickGrid').innerHTML = pickButtons(undefined, false);
     $('pickDialog').showModal();
   });

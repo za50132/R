@@ -198,18 +198,19 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- 把號碼補到 p_upto（中間漏加的都當作「不指定」）
+-- 只信任 last_issued：號碼牌會繞圈重發，舊號碼牌還留著是正常的，不能再拿「現有
+-- 號碼牌裡最大是幾號」當基準，撞到舊號碼牌一律直接蓋掉重發（跟 issue 同一套邏輯）。
 create or replace function public.qc_fill_to(p_shop text, p_upto int) returns int
 language plpgsql security definer set search_path = public as $$
 declare from_n int;
 begin
-  -- 以「已發號碼」和「今天實際存在的最大號碼」較大者為準，資料不一致時也不會撞號
-  select greatest(s.last_issued, coalesce(max(t.number), 0)) + 1 into from_n
-    from shops s left join tickets t on t.shop_id = s.id and t.day = qc_today()
-   where s.id = p_shop group by s.last_issued;
+  select last_issued + 1 into from_n from shops where id = p_shop;
   if p_upto < from_n then return 0; end if;
   insert into tickets (shop_id, day, number)
   select p_shop, qc_today(), g from generate_series(from_n, p_upto) g
-  on conflict do nothing;
+  on conflict (shop_id, day, number) do update
+    set designer_id = null, status = 'waiting', served_by = null,
+        issued_at = now(), called_at = null, finished_at = null, sort_key = null, assigned = false;
   update shops set last_issued = p_upto, updated_at = now() where id = p_shop;
   insert into call_log (shop_id, action, number, prev_last_called) values (p_shop, 'issue_to', p_upto, from_n - 1);
   return p_upto - from_n + 1;
@@ -444,7 +445,11 @@ begin
     if p_number is null or p_number < 1 or p_number > s.max_number then
       return json_build_object('ok', false, 'message', '請輸入 1～' || s.max_number || ' 的號碼');
     end if;
-    if p_number > s.last_issued then perform qc_fill_to(p_shop, p_number); end if;
+    -- 只在這個號碼今天從來沒發過時才補號；已經存在的號碼牌（不管哪一輪發的）
+    -- 直接操作既有那張，不要觸發批次補號蓋掉中間還沒處理的號碼牌。
+    if not exists (select 1 from tickets where shop_id = p_shop and day = today and number = p_number) then
+      perform qc_fill_to(p_shop, p_number);
+    end if;
     select * into t from tickets where shop_id = p_shop and day = today and number = p_number for update;
     if t.status = 'serving' and t.served_by <> p_designer then
       return json_build_object('ok', false, 'message', qc_fmt(p_number) || ' 號正在由 '
