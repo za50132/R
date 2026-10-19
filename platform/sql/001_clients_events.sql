@@ -22,7 +22,7 @@ create table if not exists public.clients (
 alter table public.clients enable row level security;   -- 沒有 policy = 外部完全讀不到
 
 insert into public.clients (id, name, industry, systems, started_on, note)
-values ('qingjin', '請進', '快剪', '{queue}', null, '正式啟用日期待定')
+values ('qingjin', '請進', '快剪', '{queue}', '2026-10-19', '2026-10-19 13:00（台北）正式啟用；之前的資料是測試')
 on conflict (id) do nothing;
 
 -- 叫號系統的店家一定要先在名冊裡（打錯代號會被資料庫拒絕）
