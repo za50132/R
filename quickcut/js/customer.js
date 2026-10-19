@@ -106,8 +106,28 @@
     try { localStorage.setItem('qc-vid', JSON.stringify({ day: today, id })); } catch (e) { /* 無痕視窗 */ }
     return id;
   }
-  const SRC = (() => { try { return new URLSearchParams(location.search).get('src'); } catch (e) { return null; } })();
-  const logView = (kind) => { try { store.logView(kind, visitorId(), SRC); } catch (e) { /* 不影響畫面 */ } };
+  const PARAMS = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(); } })();
+  const SRC = PARAMS.get('src');
+  // 不算進使用量的瀏覽：
+  //   ・自動化測試的瀏覽器（navigator.webdriver）和搜尋引擎、連結預覽之類的機器人
+  //   ・店內手機（登入過操作頁）
+  //   ・自己人的手機或電腦：打開一次 ?internal=1 就記住，?internal=0 取消
+  const INTERNAL_KEY = 'qc-internal';
+  try {
+    if (PARAMS.get('internal') === '1') localStorage.setItem(INTERNAL_KEY, '1');
+    if (PARAMS.get('internal') === '0') localStorage.removeItem(INTERNAL_KEY);
+  } catch (e) { /* 無痕視窗 */ }
+  const NOT_COUNTED = (() => {
+    if (navigator.webdriver) return true;
+    if (/bot|crawl|spider|slurp|preview|lighthouse|headless|facebookexternalhit|line-poker/i.test(navigator.userAgent || '')) return true;
+    try {
+      return Boolean(localStorage.getItem(INTERNAL_KEY) || localStorage.getItem(`qc-staff-${cfg.shopId}`));
+    } catch (e) { return false; }
+  })();
+  const logView = (kind) => {
+    if (NOT_COUNTED) return;
+    try { store.logView(kind, visitorId(), SRC); } catch (e) { /* 不影響畫面 */ }
+  };
   logView('open');
 
   // ===== 查我的號碼 =====
