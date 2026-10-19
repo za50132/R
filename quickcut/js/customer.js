@@ -15,6 +15,7 @@
   $('mapLink').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cfg.shop.mapQuery)}`;
   $('phone').textContent = cfg.shop.phone;
   $('telLink').href = `tel:${cfg.shop.phone.replace(/\s/g, '')}`;
+  $('myNum').max = cfg.maxNumber || 999;
   if (store.mode === 'demo') $('demoBanner').hidden = false;
 
   function bump(el) {

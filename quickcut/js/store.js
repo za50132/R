@@ -213,15 +213,27 @@
       if (['issue', 'assign', 'dispatch'].includes(action) && designer && !db.designers[designer]) return fail('找不到這位設計師');
       const who = designer ? nameOf(designer) : null;
       if (action === 'issue') {
-        const n = Math.max(s.last_issued, ...db.tickets.map((t) => t.number), 0) + 1;
-        if (n > 999) return fail('號碼已到 999，請店長歸零');
-        db.tickets.push({ number: n, designer_id: designer || null, status: 'waiting', served_by: null, issued_at: iso() });
+        const maxN = cfg.maxNumber || 999;
+        const blocked = (num) => db.tickets.find((t) => t.number === num && !['waiting', 'cancelled'].includes(t.status));
+        let n = s.last_issued + 1;
+        if (n > maxN) n = 1;
+        let tries = 0;
+        while (tries < maxN && blocked(n)) { n += 1; if (n > maxN) n = 1; tries += 1; }
+        if (tries >= maxN) return fail(`${maxN} 個號碼都在服務中，請店長歸零或檢查現場`);
+        const existing = db.tickets.find((t) => t.number === n);
+        if (existing) {
+          Object.assign(existing, { designer_id: designer || null, status: 'waiting', served_by: null,
+            issued_at: iso(), called_at: null, finished_at: null, sort_key: undefined });
+        } else {
+          db.tickets.push({ number: n, designer_id: designer || null, status: 'waiting', served_by: null, issued_at: iso() });
+        }
         s.last_issued = n;
         write(db);
         return ok(`加號 ${fmt(n)}${who ? `（指定 ${who}）` : ''}・等 ${waiting(db)} 人`, { number: n });
       }
       if (action === 'issue_to') {
-        if (!(number >= 1 && number <= 999)) return fail('請輸入 1～999 的號碼');
+        const maxN = cfg.maxNumber || 999;
+        if (!(number >= 1 && number <= maxN)) return fail(`請輸入 1～${maxN} 的號碼`);
         if (number <= s.last_issued) return ok(`已經發到 ${fmt(s.last_issued)} 號，不用補`);
         const added = fillTo(db, number);
         write(db);
@@ -304,7 +316,8 @@
           { number: pick.number });
       }
       if (action === 'call') {
-        if (!(number >= 1 && number <= 999)) return fail('請輸入 1～999 的號碼');
+        const maxN = cfg.maxNumber || 999;
+        if (!(number >= 1 && number <= maxN)) return fail(`請輸入 1～${maxN} 的號碼`);
         if (number > s.last_issued) fillTo(db, number);
         const t = ticket(db, number);
         if (t.status === 'serving' && t.served_by !== designer) return fail(`${fmt(number)} 號正在由 ${nameOf(t.served_by)} 服務`);
@@ -357,7 +370,8 @@
         write(db); return ok('已取消休假');
       }
       if (action === 'set_number') {
-        if (!(a.number >= 0 && a.number <= 999)) return fail('請輸入 0～999 的號碼');
+        const maxN = cfg.maxNumber || 999;
+        if (!(a.number >= 0 && a.number <= maxN)) return fail(`請輸入 0～${maxN} 的號碼`);
         db.shop.last_called = a.number; write(db);
         return ok(`目前叫號改為 ${fmt(a.number)}`);
       }

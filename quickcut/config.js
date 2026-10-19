@@ -11,6 +11,10 @@ window.QC_CONFIG = {
 
   shopId: 'qingjin',    // 要跟 supabase/setup.sql 裡的店家代號一樣
 
+  // 號碼牌上限（要跟 supabase/setup.sql 裡 shops.max_number 一致，目前是 50）：
+  // 模擬實體抽號機只有這麼多張票，發到上限後，加號會自動繞回 1 號重發。
+  maxNumber: 50,
+
   // 設計師超過幾分鐘沒叫號，就當作「空檔中」，客人頁會顯示「現在人少」
   idleMinutes: 20,
 

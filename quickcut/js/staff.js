@@ -12,6 +12,13 @@
 
   if (store.mode === 'demo') $('demoBanner').hidden = false;
 
+  // 號碼牌上限：輸入框的 max 跟著 config.js 走，不要讓店員能打出超過上限的號碼
+  const MAX_N = cfg.maxNumber || 999;
+  ['syncInput', 'setNumInput', 'setIssuedInput', 'recallInput', 'callInput'].forEach((id) => {
+    const el = $(id);
+    if (el) el.max = MAX_N;
+  });
+
   // ---------- 小工具 ----------
   function loadSession() {
     try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch (e) { return {}; }

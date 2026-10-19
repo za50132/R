@@ -25,6 +25,11 @@ create table if not exists public.shops (
   updated_at  timestamptz not null default now()
 );
 
+-- 號碼牌上限：模擬實體抽號機只有這麼多張票。發到上限後，加號會自動繞回 1 號重發
+-- （繞回去撞到的號碼如果還沒人服務過，會直接蓋掉重發；已經服務過的會自動跳過）。
+alter table public.shops add column if not exists max_number int not null default 999
+  check (max_number between 1 and 999);
+
 create table if not exists public.designers (
   shop_id        text not null references public.shops(id) on delete cascade,
   id             text not null,
@@ -250,6 +255,7 @@ declare
   n     int;
   prev  int;
   added int;
+  tries int;
   msg   text;
   who   text;
   today date := qc_today();
@@ -301,17 +307,24 @@ begin
 
   if p_action = 'issue' then
     n := s.last_issued + 1;
-    -- 正常情況這號不會有舊紀錄；只有店長用「修改已發號碼」改小過，才可能剛好
-    -- 撞到舊的、還沒人用過的號碼牌，這種情況直接蓋掉重發（下面 on conflict）。
-    -- 如果撞到的是已經服務過的號碼（理論上不會發生，防呆用），跳號找下一個真正沒發過的。
-    while exists (
+    if n > s.max_number then n := 1; end if;
+    -- 號碼牌上限內繞圈找一個「沒人服務過」的號碼：正常情況第一個就是；只有發到上限
+    -- 繞回去、或店長用「修改已發號碼」改小過，才可能撞到舊號碼牌——還沒人用過的
+    -- 直接蓋掉重發（下面 on conflict），已經服務過的跳過找下一個。
+    tries := 0;
+    while tries < s.max_number and exists (
       select 1 from tickets
        where shop_id = p_shop and day = today and number = n
          and status not in ('waiting', 'cancelled')
     ) loop
       n := n + 1;
+      if n > s.max_number then n := 1; end if;
+      tries := tries + 1;
     end loop;
-    if n > 999 then return json_build_object('ok', false, 'message', '號碼已到 999，請店長歸零'); end if;
+    if tries >= s.max_number then
+      return json_build_object('ok', false, 'message',
+        s.max_number || ' 個號碼都在服務中，請店長歸零或檢查現場');
+    end if;
     insert into tickets (shop_id, day, number, designer_id) values (p_shop, today, n, p_designer)
     on conflict (shop_id, day, number) do update
       set designer_id = excluded.designer_id, status = 'waiting', served_by = null,
@@ -322,8 +335,8 @@ begin
       'message', '加號 ' || qc_fmt(n) || coalesce('（指定 ' || who || '）', '') || '・等 ' || qc_waiting(p_shop) || ' 人');
 
   elsif p_action = 'issue_to' then
-    if p_number is null or p_number < 1 or p_number > 999 then
-      return json_build_object('ok', false, 'message', '請輸入 1～999 的號碼');
+    if p_number is null or p_number < 1 or p_number > s.max_number then
+      return json_build_object('ok', false, 'message', '請輸入 1～' || s.max_number || ' 的號碼');
     end if;
     if p_number <= s.last_issued then
       return json_build_object('ok', true, 'message', '已經發到 ' || qc_fmt(s.last_issued) || ' 號，不用補');
@@ -444,8 +457,8 @@ begin
                  || '・等 ' || qc_waiting(p_shop) || ' 人');
 
   elsif p_action = 'call' then
-    if p_number is null or p_number < 1 or p_number > 999 then
-      return json_build_object('ok', false, 'message', '請輸入 1～999 的號碼');
+    if p_number is null or p_number < 1 or p_number > s.max_number then
+      return json_build_object('ok', false, 'message', '請輸入 1～' || s.max_number || ' 的號碼');
     end if;
     if p_number > s.last_issued then perform qc_fill_to(p_shop, p_number); end if;
     select * into t from tickets where shop_id = p_shop and day = today and number = p_number for update;
@@ -539,10 +552,12 @@ create or replace function public.owner_action(
 ) returns json
 language plpgsql security definer set search_path = public, extensions as $$
 declare
-  err text;
+  err   text;
+  max_n int;
 begin
   err := qc_check_pin(p_shop, p_pin, true);
   if err is not null then return json_build_object('ok', false, 'message', err); end if;
+  select max_number into max_n from shops where id = p_shop;
 
   perform qc_roll_day(p_shop);
 
@@ -561,8 +576,8 @@ begin
     return json_build_object('ok', true, 'message', '已取消休假');
 
   elsif p_action = 'set_number' then
-    if p_number is null or p_number < 0 or p_number > 999 then
-      return json_build_object('ok', false, 'message', '請輸入 0～999 的號碼');
+    if p_number is null or p_number < 0 or p_number > max_n then
+      return json_build_object('ok', false, 'message', '請輸入 0～' || max_n || ' 的號碼');
     end if;
     insert into call_log (shop_id, action, number, prev_last_called)
     select p_shop, 'set_number', p_number, last_called from shops where id = p_shop;
@@ -570,8 +585,8 @@ begin
     return json_build_object('ok', true, 'message', '目前叫號改為 ' || qc_fmt(p_number));
 
   elsif p_action = 'set_issued' then
-    if p_number is null or p_number < 0 or p_number > 999 then
-      return json_build_object('ok', false, 'message', '請輸入 0～999 的號碼');
+    if p_number is null or p_number < 0 or p_number > max_n then
+      return json_build_object('ok', false, 'message', '請輸入 0～' || max_n || ' 的號碼');
     end if;
     if p_number >= (select last_issued from shops where id = p_shop) then
       -- 改大：跟操作頁的補號一樣，中間缺的號碼補成不指定
@@ -587,8 +602,8 @@ begin
     return json_build_object('ok', true, 'message', '已發號碼改為 ' || qc_fmt(p_number));
 
   elsif p_action = 'recall_ticket' then
-    if p_number is null or p_number < 1 or p_number > 999 then
-      return json_build_object('ok', false, 'message', '請輸入 1～999 的號碼');
+    if p_number is null or p_number < 1 or p_number > max_n then
+      return json_build_object('ok', false, 'message', '請輸入 1～' || max_n || ' 的號碼');
     end if;
     if not exists (select 1 from tickets where shop_id = p_shop and day = qc_today() and number = p_number) then
       return json_build_object('ok', false, 'message', qc_fmt(p_number) || ' 號今天不存在');
@@ -712,6 +727,7 @@ end $$;
 -- 店家與設計師初始資料（id 要跟 config.js 一樣）
 -- ---------------------------------------------------------------------
 insert into public.shops (id) select shop_id from qc_setup_pins on conflict do nothing;
+update public.shops set max_number = 50 where id = 'qingjin';
 
 insert into public.designers (shop_id, id, name, sort) values
   ('qingjin', 'jiang', '江江', 1),
