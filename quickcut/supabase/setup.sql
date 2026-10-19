@@ -202,15 +202,20 @@ $$;
 -- 號碼牌裡最大是幾號」當基準，撞到舊號碼牌一律直接蓋掉重發（跟 issue 同一套邏輯）。
 create or replace function public.qc_fill_to(p_shop text, p_upto int) returns int
 language plpgsql security definer set search_path = public as $$
-declare from_n int;
+declare from_n int; base_sort numeric;
 begin
   select last_issued + 1 into from_n from shops where id = p_shop;
   if p_upto < from_n then return 0; end if;
-  insert into tickets (shop_id, day, number)
-  select p_shop, qc_today(), g from generate_series(from_n, p_upto) g
+  -- sort_key 給遞增值（理由同 issue）：補號可能是繞圈後補小號碼，不能讓它們
+  -- 照號碼大小排到隊伍前面，要照補發的順序排在隊伍最後面。
+  select coalesce(max(coalesce(sort_key, number)), 0) into base_sort
+    from tickets where shop_id = p_shop and day = qc_today();
+  insert into tickets (shop_id, day, number, sort_key)
+  select p_shop, qc_today(), g, base_sort + row_number() over (order by g)
+  from generate_series(from_n, p_upto) g
   on conflict (shop_id, day, number) do update
     set designer_id = null, status = 'waiting', served_by = null,
-        issued_at = now(), called_at = null, finished_at = null, sort_key = null, assigned = false;
+        issued_at = now(), called_at = null, finished_at = null, sort_key = excluded.sort_key, assigned = false;
   update shops set last_issued = p_upto, updated_at = now() where id = p_shop;
   insert into call_log (shop_id, action, number, prev_last_called) values (p_shop, 'issue_to', p_upto, from_n - 1);
   return p_upto - from_n + 1;
@@ -310,10 +315,14 @@ begin
     if n > s.max_number then n := 1; end if;
     -- 發到上限直接繞回 1 號重發，不管那個號碼目前是什麼狀態都直接蓋掉
     -- （信任等繞回同一個號碼時，上一輪那位客人早就服務完了）。
-    insert into tickets (shop_id, day, number, designer_id) values (p_shop, today, n, p_designer)
+    -- sort_key 給遞增值、不能留 null：繞回去的號碼數字變小，等候名單若照號碼排序
+    -- 會被誤判成排最前面，實際上這張是最晚來的客人，要排在隊伍最後面。
+    select coalesce(max(coalesce(sort_key, number)), 0) + 1 into k
+      from tickets where shop_id = p_shop and day = today;
+    insert into tickets (shop_id, day, number, designer_id, sort_key) values (p_shop, today, n, p_designer, k)
     on conflict (shop_id, day, number) do update
       set designer_id = excluded.designer_id, status = 'waiting', served_by = null,
-          issued_at = now(), called_at = null, finished_at = null, sort_key = null, assigned = false;
+          issued_at = now(), called_at = null, finished_at = null, sort_key = excluded.sort_key, assigned = false;
     update shops set last_issued = n, updated_at = now() where id = p_shop;
     insert into call_log (shop_id, designer_id, action, number) values (p_shop, p_designer, 'issue', n);
     return json_build_object('ok', true, 'number', n, 'waiting', qc_waiting(p_shop),

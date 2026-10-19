@@ -177,16 +177,21 @@
     const key = (t) => (t.sort_key != null ? t.sort_key : t.number);
     const queue = (db) => db.tickets.filter((t) => t.status === 'waiting').sort((a, b) => key(a) - key(b) || a.number - b.number);
     const waiting = (db, who) => db.tickets.filter((t) => t.status === 'waiting' && (!who || t.designer_id === who)).length;
+    // 補號可能是繞圈後補小號碼，sort_key 要遞增排在隊伍最後面，不能讓它們照號碼
+    // 大小排到前面（理由跟 issue 一樣）。
+    const maxSort = (db) => db.tickets.reduce((m, t) => Math.max(m, key(t)), 0);
     function fillTo(db, upto) {
       const from = db.shop.last_issued + 1;
       if (upto < from) return 0;
+      let sortKey = maxSort(db);
       for (let n = from; n <= upto; n++) {
+        sortKey += 1;
         const existing = db.tickets.find((t) => t.number === n);
         if (existing) {
           Object.assign(existing, { designer_id: null, status: 'waiting', served_by: null,
-            issued_at: iso(), called_at: null, finished_at: null, sort_key: undefined });
+            issued_at: iso(), called_at: null, finished_at: null, sort_key: sortKey });
         } else {
-          db.tickets.push({ number: n, designer_id: null, status: 'waiting', served_by: null, issued_at: iso() });
+          db.tickets.push({ number: n, designer_id: null, status: 'waiting', served_by: null, issued_at: iso(), sort_key: sortKey });
         }
       }
       db.shop.last_issued = upto;
@@ -223,12 +228,13 @@
         const maxN = cfg.maxNumber || 999;
         let n = s.last_issued + 1;
         if (n > maxN) n = 1;
+        const sortKey = maxSort(db) + 1;
         const existing = db.tickets.find((t) => t.number === n);
         if (existing) {
           Object.assign(existing, { designer_id: designer || null, status: 'waiting', served_by: null,
-            issued_at: iso(), called_at: null, finished_at: null, sort_key: undefined });
+            issued_at: iso(), called_at: null, finished_at: null, sort_key: sortKey });
         } else {
-          db.tickets.push({ number: n, designer_id: designer || null, status: 'waiting', served_by: null, issued_at: iso() });
+          db.tickets.push({ number: n, designer_id: designer || null, status: 'waiting', served_by: null, issued_at: iso(), sort_key: sortKey });
         }
         s.last_issued = n;
         write(db);
