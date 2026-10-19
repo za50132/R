@@ -514,7 +514,7 @@ end $$;
 
 -- ---------------------------------------------------------------------
 -- 店長操作
---   p_action: ping / day_off / day_on / set_number / reset_today / set_staff_pin / set_owner_pin
+--   p_action: ping / day_off / day_on / set_number / set_issued / reset_today / set_staff_pin / set_owner_pin
 -- ---------------------------------------------------------------------
 create or replace function public.owner_action(
   p_shop     text,
@@ -556,6 +556,24 @@ begin
     select p_shop, 'set_number', p_number, last_called from shops where id = p_shop;
     update shops set last_called = p_number, updated_at = now() where id = p_shop;
     return json_build_object('ok', true, 'message', '目前叫號改為 ' || qc_fmt(p_number));
+
+  elsif p_action = 'set_issued' then
+    if p_number is null or p_number < 0 or p_number > 999 then
+      return json_build_object('ok', false, 'message', '請輸入 0～999 的號碼');
+    end if;
+    if p_number >= (select last_issued from shops where id = p_shop) then
+      -- 改大：跟操作頁的補號一樣，中間缺的號碼補成不指定
+      perform qc_fill_to(p_shop, p_number);
+    else
+      -- 改小：多發、還沒人等的號碼牌直接刪掉，讓這些號碼可以重新發
+      -- （已經在服務中、已完成、過號的不會動，之後再發號還是會自動避開這些號碼）
+      delete from tickets
+       where shop_id = p_shop and day = qc_today() and number > p_number and status = 'waiting';
+      insert into call_log (shop_id, action, number, prev_last_called)
+      select p_shop, 'set_issued', p_number, last_issued from shops where id = p_shop;
+      update shops set last_issued = p_number, updated_at = now() where id = p_shop;
+    end if;
+    return json_build_object('ok', true, 'message', '已發號碼改為 ' || qc_fmt(p_number));
 
   elsif p_action = 'reset_today' then
     insert into call_log (shop_id, action, prev_last_called)

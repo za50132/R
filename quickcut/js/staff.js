@@ -389,6 +389,13 @@
     const r = await ownerAct('set_number', { number: n });
     if (r.ok) $('setNumInput').value = '';
   });
+  $('setIssuedForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const n = parseInt($('setIssuedInput').value, 10);
+    if (Number.isNaN(n)) return;
+    const r = await ownerAct('set_issued', { number: n });
+    if (r.ok) $('setIssuedInput').value = '';
+  });
   $('btnReset').addEventListener('click', async () => {
     if (await ask('確定把今天的號碼歸零？等候名單和所有設計師的號碼都會清空。', '歸零')) ownerAct('reset_today');
   });

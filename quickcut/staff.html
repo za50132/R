@@ -153,6 +153,15 @@
       </div>
 
       <div class="panel">
+        <h3>修改已發號碼</h3>
+        <p class="hint">發號發錯、發太多的時候用。改小的話，還在等候中、還沒人服務的多發號碼牌會直接收回、可以重新發；已經在服務或完成的號碼不會動。</p>
+        <form class="inline" id="setIssuedForm">
+          <input class="field" id="setIssuedInput" type="number" inputmode="numeric" min="0" max="999" placeholder="例：20" />
+          <button class="btn primary" type="submit">更新</button>
+        </form>
+      </div>
+
+      <div class="panel">
         <h3>今日歸零</h3>
         <p class="hint">每天第一次叫號時會自動從 001 開始，一般不需要手動歸零。</p>
         <button class="btn danger wide" id="btnReset">現在歸零</button>
