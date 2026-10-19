@@ -10,7 +10,7 @@ description: 抓取所有客戶（店家）的數據，做成 Excel、PDF、PNG 
 
 ## 步驟
 
-1. **決定期間**（台北日期，含頭尾）。使用者沒說就用「`clients.json` 的 since 到今天」（since 之前是測試期，不算）。since 是 null（正式啟用日期待定）時，先告訴使用者「還在測試期」，問要看測試資料還是等正式啟用；「上週」= 上週一到週日；「這個月」= 本月 1 號到今天。
+1. **決定期間**（台北日期，含頭尾）。使用者沒說就用「`clients.json` 的 since 到今天」（since 之前是測試期，不算）。`{{START}}` 填 `since_time`（例：請進 `'2026-10-19 13:00+08'`，當天 13:00 前是測試）；期間開頭晚於 since_time 或沒有 since_time 時，填期間第一天的 `'YYYY-MM-DD 00:00+08'`。since 是 null（正式啟用日期待定）時，先告訴使用者「還在測試期」，問要看測試資料還是等正式啟用；「上週」= 上週一到週日；「這個月」= 本月 1 號到今天。
 2. **統計資料**：讀 `platform/report/query.sql`，把 `{{FROM}}`、`{{TO}}` 換成 `'YYYY-MM-DD'`，用 `execute_sql` 執行。
    把結果（`[{"report": {...}}]`）原樣存成 scratchpad 的 `report.json`。
 3. **原始資料**：同樣處理 `platform/report/raw.sql`。結果太大時連接器會把輸出存成檔案並告訴你路徑：
@@ -28,7 +28,7 @@ description: 抓取所有客戶（店家）的數據，做成 Excel、PDF、PNG 
 
 ## 新客戶
 
-在 `platform/report/clients.json` 加一行：`"<shop_id>": { "name": "顯示名稱", "industry": "行業", "since": "上線日" }`。
+在 `platform/report/clients.json` 加一行：`"<shop_id>": { "name": "顯示名稱", "industry": "行業", "since": "上線日", "since_time": "上線日 時:分+08" }`。
 沒加的客戶也會出現在報表，只是名稱顯示代號。
 
 ## 注意
