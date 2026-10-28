@@ -2,3 +2,5 @@
 node_modules/
 _backups/
 .netlify/
+
+.DS_Store
