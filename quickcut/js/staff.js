@@ -152,8 +152,22 @@
     $('btnUndoIssue').textContent = `取消最後加的一號（${pad3(state.lastIssued)}）`;
   }
 
+  // 叫號後的提示：先說「指定（含指派）這位設計師」的還有幾位；他沒有自己的客人了，才說現場不指定有幾位。
+  // 用叫號前的等候名單算，剛叫走的那一號不算（畫面可能還沒更新）
+  function afterCallText(who, called) {
+    const left = waitingTickets(state).filter((t) => t.number !== called);
+    const mine = left.filter((t) => t.designer === who).length;
+    const name = designer(who).name;
+    if (mine) return `${name}${/[A-Za-z]$/.test(name) ? ' ' : ''}的客人還有 ${mine} 位`;
+    const open = left.filter((t) => !t.designer).length;
+    return open ? `現場不指定等 ${open} 位` : '沒有人在等';
+  }
+
   async function send(who, action, number, undo = null) {
     const r = await store.staff(session.pin, who, action, number);
+    if (r.ok && ['next', 'skip'].includes(action) && r.number != null && state) {
+      r.message = r.message.replace(/・等 \d+ 人$/, `・${afterCallText(who, r.number)}`);
+    }
     toast(r.message, !r.ok, r.ok ? undo : null);
     if (!r.ok && r.message === '密碼錯誤') { session = {}; saveSession(); startLogin(); }
     return r;
