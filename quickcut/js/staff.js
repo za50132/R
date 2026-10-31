@@ -1,7 +1,7 @@
 /* 操作頁：加號、叫號（一位設計師一顆按鈕）＋店長設定 */
 (function () {
   const cfg = window.QC_CONFIG;
-  const { store, pad3, esc, taipeiNow, designerView, addDays, weekday, waitingTickets, estimateWait, designerWait, waitText } = window.QC;
+  const { store, pad3, esc, taipeiNow, designerView, shiftOf, addDays, weekday, waitingTickets, estimateWait, designerWait, waitText } = window.QC;
   const $ = (id) => document.getElementById(id);
   const SAVE_KEY = `qc-staff-${cfg.shopId}`;
 
@@ -94,7 +94,6 @@
     if (!state) return;
     const now = taipeiNow();
     $('shopNum').textContent = pad3(state.lastCalled);
-    $('shopIssued').textContent = pad3(state.lastIssued);
     const waitingAll = waitingTickets(state);
     $('shopWaiting').textContent = waitingAll.length;
 
@@ -439,6 +438,34 @@
       `${name} ${Number(day.slice(5, 7))}/${Number(day.slice(8))} ${isOff ? '取消休假' : '休假'}`);
   });
 
+  // 上班時間：每半小時一格的下拉選單（手機原生的時間欄位在窄螢幕會被切掉上午／下午）。
+  // 改了任一格就存，存失敗就把畫面恢復成原本的時間
+  const HALF_HOURS = Array.from({ length: 36 }, (_, i) => {
+    const m = 6 * 60 + i * 30;   // 06:00～23:30
+    return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  });
+  function timeSelect(name, k, value) {
+    const opts = HALF_HOURS.includes(value) ? HALF_HOURS : [...HALF_HOURS, value].sort();
+    return `<select class="field" data-k="${k}" aria-label="${esc(name)} ${k === 'start' ? '上班' : '下班'}">
+      ${opts.map((v) => `<option ${v === value ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
+  }
+  function renderShifts() {
+    if (!state) return;
+    $('shifts').innerHTML = cfg.designers.map((d) => {
+      const s = shiftOf(d, state);
+      return `<div class="shift-row" data-id="${d.id}"><b>${esc(d.name)}</b>
+        ${timeSelect(d.name, 'start', s.start)}<span>–</span>${timeSelect(d.name, 'end', s.end)}</div>`;
+    }).join('');
+  }
+  $('shifts').addEventListener('change', async (e) => {
+    const row = e.target.closest('[data-id]');
+    if (!row) return;
+    const [start, end] = [...row.querySelectorAll('select')].map((i) => i.value);
+    const r = await store.shift(ownerPin, row.dataset.id, start, end);
+    toast(r.message, !r.ok);
+    if (!r.ok) renderShifts();
+  });
+
   $('staffPinForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const pin = $('newStaffPin').value.trim();
@@ -478,6 +505,7 @@
     show('ownerView');
     renderOffChips();
     renderCal();
+    renderShifts();
     qrTries = 0;
     renderQr();
   }
@@ -486,7 +514,11 @@
   function onState(s) {
     state = s;
     if (!$('mainView').hidden) renderMain();
-    if (!$('ownerView').hidden) renderCal();
+    if (!$('ownerView').hidden) {
+      renderCal();
+      // 正在改的時間格不要被別支手機的更新蓋掉
+      if (!$('shifts').contains(document.activeElement)) renderShifts();
+    }
   }
   store.load().then(onState).catch(() => toast('連線失敗，請檢查網路', true));
   store.subscribe(onState, (s) => { if (s === 'error') toast('連線中斷，重新連線中…', true); });

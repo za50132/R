@@ -345,6 +345,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .wrow.dim { color: var(--muted); }
 .wrow.dim .wrow-eta { color: var(--muted); }
 
+/* 店長設定：上班時間，一位設計師一列 */
+.shift-row { display: grid; grid-template-columns: 4em 1fr auto 1fr; align-items: center; gap: 8px; padding: 8px 0; }
+.shift-row b { font-size: 16px; }
+.shift-row .field { padding: 10px 6px; text-align: center; text-align-last: center; font-size: 17px; letter-spacing: 0; min-width: 0; appearance: none; -webkit-appearance: none; }
+.shift-row span { color: var(--muted); }
+
 /* 號碼調整：一列一件事，點了跳出輸入框 */
 .btn-row { width: 100%; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .numfix-val { font-size: 22px; }

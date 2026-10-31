@@ -6,6 +6,7 @@
  *   store.staff(pin, designer, action, number)
  *   store.fix(pin, action, number)     號碼調整：set_number / set_issued / recall_ticket（店內密碼）
  *   store.owner(pin, action, { designer, day, number, newPin })
+ *   store.shift(pin, designer, start, end)   店長設定上下班時間（'HH:MM'）
  * 叫號規則以 supabase/setup.sql 為準，示範模式照抄同一套規則。
  */
 (function () {
@@ -19,9 +20,11 @@
     const fresh = raw.day !== today;
     const designers = {};
     for (const d of raw.designers) {
-      designers[d.id] = fresh ? { status: 'working', shiftState: 'auto', number: null, calledAt: null }
+      // 上下班時間是店長設定的，換日也不歸零；留空就照 config.js 的班表
+      const shift = { start: d.shift_start || null, end: d.shift_end || null };
+      designers[d.id] = fresh ? { status: 'working', shiftState: 'auto', number: null, calledAt: null, ...shift }
                               : { status: d.status, shiftState: d.shift_state, number: d.current_number,
-                                  calledAt: d.called_at ? Date.parse(d.called_at) : null };
+                                  calledAt: d.called_at ? Date.parse(d.called_at) : null, ...shift };
     }
     return {
       day: today,
@@ -51,7 +54,7 @@
       const from = taipeiNow().date;
       const [s, d, o, t] = await Promise.all([
         client.from('shops').select('day,last_called,last_issued,wait_minutes,wait_set_at').eq('id', shopId).single(),
-        client.from('designers').select('id,status,current_number,called_at,shift_state').eq('shop_id', shopId),
+        client.from('designers').select('id,status,current_number,called_at,shift_state,shift_start,shift_end').eq('shop_id', shopId),
         client.from('days_off').select('designer_id,day').eq('shop_id', shopId)
           .gte('day', from).lte('day', QC.addDays(from, 200)),
         client.from('tickets').select('*').eq('shop_id', shopId).eq('day', from),
@@ -114,6 +117,8 @@
       logView,
       staff: (pin, designer, action, number = null) =>
         rpc('staff_action', { p_shop: shopId, p_pin: pin, p_designer: designer, p_action: action, p_number: number }),
+      shift: (pin, designer, start, end) =>
+        rpc('owner_shift', { p_shop: shopId, p_pin: pin, p_designer: designer, p_start: start, p_end: end }),
       fix: (pin, action, number) =>
         rpc('staff_fix', { p_shop: shopId, p_pin: pin, p_action: action, p_number: number }),
       owner: (pin, action, a = {}) =>
@@ -400,6 +405,19 @@
       return fail(`不認識的操作：${action}`);
     }
 
+    async function shift(pin, designer, start, end) {
+      const db = read();
+      if (pin !== db.pins.owner) return fail('密碼錯誤');
+      const re = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!re.test(start || '') || !re.test(end || '')) return fail('請輸入正確的時間');
+      if (start >= end) return fail('下班時間要比上班時間晚');
+      const d = db.designers[designer];
+      if (!d) return fail('找不到這位設計師');
+      Object.assign(d, { shift_start: start, shift_end: end });
+      write(db);
+      return ok(`${nameOf(designer)} 上班時間改為 ${start}–${end}`);
+    }
+
     async function owner(pin, action, a = {}) {
       const db = read();
       if (pin !== db.pins.owner) return fail('密碼錯誤');
@@ -471,6 +489,7 @@
       },
       staff,
       fix,
+      shift,
       owner,
       demoReset,
       demoSeed,

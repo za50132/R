@@ -1,5 +1,6 @@
--- 2026-10-31：叫號頁的「號碼調整」（目前叫到、抽號機發到、叫回）用店內密碼就能做
--- 只新增函式，不改、不刪任何資料；可以重複執行。網頁部署前要先套用這段。
+-- 2026-10-31：網頁部署前要先套用這段。只新增欄位和函式，不改、不刪任何資料；可以重複執行。
+--   1. 叫號頁的「號碼調整」（目前叫到、抽號機發到、叫回）用店內密碼就能做
+--   2. 店長設定可以改設計師每天的上下班時間
 -- （setup.sql 裡的 owner_action 也改成呼叫 qc_fix_number，但結果相同，正式資料庫不用重套）
 
 -- ---------------------------------------------------------------------
@@ -84,3 +85,36 @@ end $$;
 
 revoke execute on function public.qc_fix_number(text, text, int) from public, anon, authenticated;
 grant  execute on function public.staff_fix(text, text, text, int) to anon, authenticated;
+
+-- ===== 2. 上下班時間 =====
+alter table public.designers add column if not exists shift_start text
+  check (shift_start ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
+alter table public.designers add column if not exists shift_end text
+  check (shift_end ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
+
+-- ---------------------------------------------------------------------
+-- 店長設定設計師每天的上下班時間（'HH:MM'）
+-- ---------------------------------------------------------------------
+create or replace function public.owner_shift(p_shop text, p_pin text, p_designer text, p_start text, p_end text)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare
+  err  text;
+  name text;
+begin
+  err := qc_check_pin(p_shop, p_pin, true);
+  if err is not null then return json_build_object('ok', false, 'message', err); end if;
+  if coalesce(p_start, '') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' or coalesce(p_end, '') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then
+    return json_build_object('ok', false, 'message', '請輸入正確的時間');
+  end if;
+  if p_start >= p_end then
+    return json_build_object('ok', false, 'message', '下班時間要比上班時間晚');
+  end if;
+  update designers set shift_start = p_start, shift_end = p_end, updated_at = now()
+   where shop_id = p_shop and id = p_designer
+  returning designers.name into name;
+  if name is null then return json_build_object('ok', false, 'message', '找不到這位設計師'); end if;
+  return json_build_object('ok', true, 'message', name || ' 上班時間改為 ' || p_start || '–' || p_end);
+end $$;
+
+grant  execute on function public.owner_shift(text, text, text, text, text) to anon, authenticated;

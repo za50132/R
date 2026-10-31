@@ -50,14 +50,21 @@
 
   // 設計師在客人眼中的狀態
   //   free = true 代表「應該空檔中」：在班、沒休息、而且超過 idleMinutes 沒叫號
+  // 今天的上下班時間：店長在店長設定改過就用那個，沒改過照 config.js
+  function shiftOf(d, state) {
+    const live = (state && state.designers[d.id]) || {};
+    return { start: live.start || d.start, end: live.end || d.end };
+  }
+
   function designerView(d, state, now = taipeiNow()) {
     const live = state.designers[d.id] || { status: 'working', shiftState: 'auto', number: null, calledAt: null };
+    const { start, end } = shiftOf(d, state);
     if (isOff(state, d.id, now.date)) return { kind: 'off', label: '今日休假', number: null };
     if (live.shiftState === 'off') return { kind: 'away', label: '已下班', number: null };
     // 手動上班（shiftState === 'on'）要蓋過班表時段，才不會超時留下來又被判斷成已下班
     if (live.shiftState !== 'on') {
-      if (now.minutes < toMin(d.start)) return { kind: 'away', label: `${d.start} 上班`, number: null };
-      if (now.minutes >= toMin(d.end)) return { kind: 'away', label: '已下班', number: null };
+      if (now.minutes < toMin(start)) return { kind: 'away', label: `${start} 上班`, number: null };
+      if (now.minutes >= toMin(end)) return { kind: 'away', label: '已下班', number: null };
     }
     if (live.status === 'break') return { kind: 'break', label: '休息中', number: live.number };
 
@@ -67,7 +74,7 @@
       return { kind: 'cutting', label: '服務中', number: live.number };
     }
     // 剛上班的 15 分鐘內不算空檔：開門時門口可能已經有人在等，只是還沒按叫號
-    if (now.minutes - toMin(d.start) < 15) return { kind: 'idle', label: '上班中', number: live.number };
+    if (now.minutes - toMin(start) < 15) return { kind: 'idle', label: '上班中', number: live.number };
     return { kind: 'idle', label: '空檔中', number: live.number, free: true };
   }
 
@@ -140,6 +147,6 @@
 
   window.QC = Object.assign(window.QC || {}, {
     taipeiNow, toMin, pad3, addDays, weekday, shortDate, isOff, shopStatus, designerView, freeDesigners,
-    waitInfo, waitText, agoText, esc, waitingTickets, activeDesigners, estimateWait, designerWait, ticketInfo,
+    shiftOf, waitInfo, waitText, agoText, esc, waitingTickets, activeDesigners, estimateWait, designerWait, ticketInfo,
   });
 })();

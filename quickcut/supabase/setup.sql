@@ -50,6 +50,12 @@ alter table public.designers add column if not exists shift_state text not null 
 -- 最後叫號時間：用來判斷設計師是否空檔中（「現在人少」提示）
 alter table public.designers add column if not exists called_at timestamptz;
 
+-- 每天的上下班時間（'HH:MM'），店長在店長設定裡改；留空 = 照 config.js 的班表
+alter table public.designers add column if not exists shift_start text
+  check (shift_start ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
+alter table public.designers add column if not exists shift_end text
+  check (shift_end ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
+
 -- 今天抽號機發到幾號（老闆每按一次「加號」就 +1）
 alter table public.shops add column if not exists last_issued int not null default 0;
 
@@ -616,6 +622,31 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- 店長設定設計師每天的上下班時間（'HH:MM'）
+-- ---------------------------------------------------------------------
+create or replace function public.owner_shift(p_shop text, p_pin text, p_designer text, p_start text, p_end text)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare
+  err  text;
+  name text;
+begin
+  err := qc_check_pin(p_shop, p_pin, true);
+  if err is not null then return json_build_object('ok', false, 'message', err); end if;
+  if coalesce(p_start, '') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' or coalesce(p_end, '') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then
+    return json_build_object('ok', false, 'message', '請輸入正確的時間');
+  end if;
+  if p_start >= p_end then
+    return json_build_object('ok', false, 'message', '下班時間要比上班時間晚');
+  end if;
+  update designers set shift_start = p_start, shift_end = p_end, updated_at = now()
+   where shop_id = p_shop and id = p_designer
+  returning designers.name into name;
+  if name is null then return json_build_object('ok', false, 'message', '找不到這位設計師'); end if;
+  return json_build_object('ok', true, 'message', name || ' 上班時間改為 ' || p_start || '–' || p_end);
+end $$;
+
+-- ---------------------------------------------------------------------
 -- 店長操作
 --   p_action: ping / day_off / day_on / reset_today / set_staff_pin / set_owner_pin
 --             set_number / set_issued / recall_ticket 同 staff_fix（見 qc_fix_number）
@@ -745,6 +776,7 @@ revoke execute on function public.qc_fix_number(text, text, int)    from public,
 grant  execute on function public.staff_action(text, text, text, text, int) to anon, authenticated;
 grant  execute on function public.owner_action(text, text, text, text, date, int, text) to anon, authenticated;
 grant  execute on function public.staff_fix(text, text, text, int) to anon, authenticated;
+grant  execute on function public.owner_shift(text, text, text, text, text) to anon, authenticated;
 grant  execute on function public.crowd_stats(text) to anon, authenticated;
 grant  execute on function public.log_view(text, text, text, text) to anon, authenticated;
 

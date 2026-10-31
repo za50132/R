@@ -49,7 +49,7 @@
   <section id="mainView" hidden>
     <div class="topbar">
       <div class="topbar-title">請進<small>叫號操作</small></div>
-      <div class="topbar-shop">叫號 <b class="num" id="shopNum">---</b><span class="topbar-q">已發 <b class="num" id="shopIssued">---</b>・等 <b class="num" id="shopWaiting">0</b></span></div>
+      <div class="topbar-shop">叫號 <b class="num" id="shopNum">---</b><span class="topbar-q">等 <b class="num" id="shopWaiting">0</b> 人</span></div>
     </div>
 
     <main class="wrap">
@@ -90,7 +90,7 @@
           <div class="row-main"><div class="row-value">查看客人看到的畫面</div></div><span class="row-go">›</span>
         </a>
         <button class="row btn-row" id="btnOwner" style="width:100%;border:0;background:none;text-align:left">
-          <div class="row-main"><div class="row-value">店長設定（排休、密碼、QR Code）</div></div><span class="row-go">›</span>
+          <div class="row-main"><div class="row-value">店長設定（排休、上班時間、密碼、QR Code）</div></div><span class="row-go">›</span>
         </button>
         <button class="row btn-row" id="btnLogout" style="width:100%;border:0;background:none;text-align:left">
           <div class="row-main"><div class="row-value" style="color:var(--danger)">登出這支手機</div></div>
@@ -154,6 +154,12 @@
           <button class="btn" id="calNext" aria-label="下個月">›</button>
         </div>
         <div class="cal" id="cal"></div>
+      </div>
+
+      <div class="panel">
+        <h3>上班時間</h3>
+        <p class="hint">每天固定的上下班時間，改了馬上生效。臨時加班或提早走，在叫號頁長按名字按「上班／下班」就好。</p>
+        <div class="shift-list" id="shifts"></div>
       </div>
 
       <div class="panel">
