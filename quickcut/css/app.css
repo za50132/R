@@ -312,9 +312,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* 叫號列的四顆按鈕 */
 .actions.four { grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .actions.four .btn { padding: 14px 2px; font-size: 14px; }
-.topbar-shop { text-align: right; line-height: 1.25; }
-.topbar-q { display: block; font-size: 12px; color: #b9c2c8; }
-.topbar-q b { color: #fff; }
+.topbar-shop { text-align: right; line-height: 1.25; white-space: nowrap; }
+.topbar-q { margin-left: 14px; }   /* 叫號、等幾人並排，字一樣大 */
 .me-queue { font-size: 13px; color: var(--teal-dark); font-weight: 700; margin-top: 2px; }
 
 /* 等候名單 */
