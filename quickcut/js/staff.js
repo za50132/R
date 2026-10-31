@@ -97,13 +97,17 @@
     const waitingAll = waitingTickets(state);
     $('shopWaiting').textContent = waitingAll.length;
 
-    // 一位設計師一顆按鈕：名字＋服務中的號碼
+    // 一位設計師一顆按鈕：名字＋服務中的號碼＋指定（含指派）他的還有幾位、現在指定他大約等多久
+    const short = (m) => waitText(m).replace('分鐘', '分');
     $('dgrid').innerHTML = cfg.designers.map((d) => {
       const v = designerView(d, state, now);
+      const w = designerWait(cfg, state, d, now);
       const shown = v.kind === 'off' ? '休假' : v.kind === 'away' ? v.label : v.kind === 'break' ? '休息中' : pad3(v.number);
+      const wait = w.minutes != null ? `等 <b>${w.count}</b> 人・${short(w.minutes)}` : w.count ? `等 <b>${w.count}</b> 人` : '';
       return `<button class="dbtn ${v.kind}" data-id="${d.id}" aria-label="${esc(d.name)}，按一下叫下一號，長按更多操作">
         <span class="dbtn-name">${esc(d.name)}</span>
         <span class="dbtn-num num ${v.number && !['off', 'away', 'break'].includes(v.kind) ? '' : 'muted'}">${esc(shown)}</span>
+        <span class="dbtn-wait">${wait || '&nbsp;'}</span>
       </button>`;
     }).join('');
 
@@ -114,25 +118,16 @@
     }
     renderBatch();
 
-    // 各設計師等候：指定（含指派）他的人數＋現在指定他大約要等多久；最後一列是不指定
-    const eta = (m) => (m == null ? '' : waitText(m));
-    const open = waitingAll.filter((t) => !t.designer).length;
-    const openEta = estimateWait(cfg, state, now);
-    $('wstats').innerHTML = cfg.designers.map((d) => {
-      const w = designerWait(cfg, state, d, now);
-      return `<div class="wrow ${w.minutes == null ? 'dim' : ''}"><span class="wrow-name">${esc(d.name)}</span>
-        <span class="wrow-n"><b class="num">${w.count}</b> 人</span>
-        <span class="wrow-eta">${esc(w.minutes == null ? w.label : eta(w.minutes))}</span></div>`;
-    }).join('') + `<div class="wrow"><span class="wrow-name">不指定</span>
-        <span class="wrow-n"><b class="num">${open}</b> 人</span>
-        <span class="wrow-eta">${openEta == null ? '沒有人在班' : eta(openEta)}</span></div>`;
-
     // 號碼調整：顯示目前的數字，點了再改
     $('fixCalled').textContent = pad3(state.lastCalled);
     $('fixIssued').textContent = pad3(state.lastIssued);
 
     // 等候名單
-    $('queueCount').textContent = waitingAll.length ? `${waitingAll.length} 人` : '';
+    // 標題旁：總人數＋不指定幾位、現在不指定大約等多久
+    const open = waitingAll.filter((t) => !t.designer).length;
+    const openEta = estimateWait(cfg, state, now);
+    $('queueCount').textContent = waitingAll.length
+      ? `${waitingAll.length} 人・不指定 ${open} 人${openEta == null ? '' : `・${short(openEta)}`}` : '';
     $('queue').innerHTML = waitingAll.length ? waitingAll.map((t) => {
       const who = t.designer ? designer(t.designer) : null;
       const cls = !who ? 'open' : t.assigned ? 'dispatched' : 'assigned';
