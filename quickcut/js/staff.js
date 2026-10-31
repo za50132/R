@@ -1,7 +1,7 @@
 /* 操作頁：加號、叫號（一位設計師一顆按鈕）＋店長設定 */
 (function () {
   const cfg = window.QC_CONFIG;
-  const { store, pad3, esc, taipeiNow, designerView, addDays, weekday, waitingTickets } = window.QC;
+  const { store, pad3, esc, taipeiNow, designerView, addDays, weekday, waitingTickets, estimateWait, designerWait, waitText } = window.QC;
   const $ = (id) => document.getElementById(id);
   const SAVE_KEY = `qc-staff-${cfg.shopId}`;
 
@@ -14,7 +14,7 @@
 
   // 號碼牌上限：輸入框的 max 跟著 config.js 走，不要讓店員能打出超過上限的號碼
   const MAX_N = cfg.maxNumber || 999;
-  ['syncInput', 'setNumInput', 'setIssuedInput', 'recallInput', 'callInput'].forEach((id) => {
+  ['numInput', 'callInput'].forEach((id) => {
     const el = $(id);
     if (el) el.max = MAX_N;
   });
@@ -107,6 +107,23 @@
         <span class="dbtn-num num ${v.number && !['off', 'away', 'break'].includes(v.kind) ? '' : 'muted'}">${esc(shown)}</span>
       </button>`;
     }).join('');
+
+    // 各設計師等候：指定（含指派）他的人數＋現在指定他大約要等多久；最後一列是不指定
+    const eta = (m) => (m == null ? '' : waitText(m));
+    const open = waitingAll.filter((t) => !t.designer).length;
+    const openEta = estimateWait(cfg, state, now);
+    $('wstats').innerHTML = cfg.designers.map((d) => {
+      const w = designerWait(cfg, state, d, now);
+      return `<div class="wrow ${w.minutes == null ? 'dim' : ''}"><span class="wrow-name">${esc(d.name)}</span>
+        <span class="wrow-n"><b class="num">${w.count}</b> 人</span>
+        <span class="wrow-eta">${esc(w.minutes == null ? w.label : eta(w.minutes))}</span></div>`;
+    }).join('') + `<div class="wrow"><span class="wrow-name">不指定</span>
+        <span class="wrow-n"><b class="num">${open}</b> 人</span>
+        <span class="wrow-eta">${openEta == null ? '沒有人在班' : eta(openEta)}</span></div>`;
+
+    // 號碼調整：顯示目前的數字，點了再改
+    $('fixCalled').textContent = pad3(state.lastCalled);
+    $('fixIssued').textContent = pad3(state.lastIssued);
 
     // 等候名單
     $('queueCount').textContent = waitingAll.length ? `${waitingAll.length} 人` : '';
@@ -296,25 +313,54 @@
   });
   $('ticketClose').addEventListener('click', () => $('ticketDialog').close());
 
-  $('syncForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const n = parseInt($('syncInput').value, 10);
-    if (!n) return;
-    const r = await issueAct('issue_to', n);
-    if (r.ok) $('syncInput').value = '';
+  // ---------- 號碼調整（店內密碼就能用；歸零要店長密碼） ----------
+  const FIX = {
+    set_number: { title: '目前叫到幾號？', hint: '叫號跟現場對不上時改這裡，下一位從這個號碼 +1 開始。', value: () => state.lastCalled },
+    set_issued: { title: '抽號機發到幾號？', hint: '照抽號機上的號碼輸入。比現在大：中間的號碼補成不指定。比現在小：多出來的號碼牌，在等候名單點它取消。', value: () => state.lastIssued },
+    recall_ticket: { title: '叫回哪一號？', hint: '取消或剪完的號碼，放回等候名單原本的位置。', value: () => '' },
+  };
+  let fixAction = null;
+  document.querySelector('.numfix').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-fix]');
+    if (!b || !state) return;
+    fixAction = b.dataset.fix;
+    const f = FIX[fixAction];
+    $('numTitle').textContent = f.title;
+    $('numHint').textContent = f.hint;
+    $('numInput').value = f.value();
+    $('numDialog').showModal();
+    setTimeout(() => $('numInput').select(), 50);
   });
+  $('numCancel').addEventListener('click', () => $('numDialog').close());
+  $('numForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const n = parseInt($('numInput').value, 10);
+    if (Number.isNaN(n)) return;
+    $('numDialog').close();
+    const r = await store.fix(session.pin, fixAction, n);
+    toast(r.message, !r.ok);
+    if (!r.ok && r.message === '密碼錯誤') { session = {}; saveSession(); startLogin(); }
+  });
+
+  $('btnReset').addEventListener('click', () => withOwner(async () => {
+    if (await ask('確定把今天的號碼歸零？等候名單和所有設計師的號碼都會清空。', '歸零')) ownerAct('reset_today');
+  }));
   $('btnUndoIssue').addEventListener('click', async () => {
     if (await ask(`取消剛剛加的 ${pad3(state.lastIssued)} 號？`, '取消這號')) issueAct('undo_issue');
   });
 
   // ---------- 店長設定 ----------
-  $('btnOwner').addEventListener('click', () => {
-    if (ownerPin) { enterOwner(); return; }
+  // 要店長密碼的操作：輸入過一次就記在記憶體，關掉頁面前不用再輸
+  let afterOwner = null;
+  function withOwner(fn) {
+    if (ownerPin) { fn(); return; }
+    afterOwner = fn;
     $('ownerPinInput').value = '';
     $('ownerErr').textContent = '';
     $('ownerDialog').showModal();
     setTimeout(() => $('ownerPinInput').focus(), 50);
-  });
+  }
+  $('btnOwner').addEventListener('click', () => withOwner(enterOwner));
   $('ownerCancel').addEventListener('click', () => $('ownerDialog').close());
   $('ownerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -323,7 +369,7 @@
     if (!r.ok) { $('ownerErr').textContent = r.message; return; }
     ownerPin = pin;
     $('ownerDialog').close();
-    enterOwner();
+    afterOwner();
   });
   $('btnOwnerBack').addEventListener('click', enterMain);
 
@@ -393,30 +439,6 @@
       `${name} ${Number(day.slice(5, 7))}/${Number(day.slice(8))} ${isOff ? '取消休假' : '休假'}`);
   });
 
-  $('setNumForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const n = parseInt($('setNumInput').value, 10);
-    if (Number.isNaN(n)) return;
-    const r = await ownerAct('set_number', { number: n });
-    if (r.ok) $('setNumInput').value = '';
-  });
-  $('setIssuedForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const n = parseInt($('setIssuedInput').value, 10);
-    if (Number.isNaN(n)) return;
-    const r = await ownerAct('set_issued', { number: n });
-    if (r.ok) $('setIssuedInput').value = '';
-  });
-  $('recallForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const n = parseInt($('recallInput').value, 10);
-    if (Number.isNaN(n)) return;
-    const r = await ownerAct('recall_ticket', { number: n });
-    if (r.ok) $('recallInput').value = '';
-  });
-  $('btnReset').addEventListener('click', async () => {
-    if (await ask('確定把今天的號碼歸零？等候名單和所有設計師的號碼都會清空。', '歸零')) ownerAct('reset_today');
-  });
   $('staffPinForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const pin = $('newStaffPin').value.trim();

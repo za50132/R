@@ -108,6 +108,15 @@
     return round5(((ahead + 0.5) * AVG()) / active.length);
   }
 
+  // 某位設計師：指定（含指派）他的有幾位在等、現在指定他大約要等幾分鐘
+  //   minutes = null 代表他現在不能剪（休假、休息、不在班）
+  function designerWait(cfg, state, d, now = taipeiNow()) {
+    const count = waitingTickets(state, d.id).length;
+    const v = designerView(d, state, now);
+    if (!['cutting', 'idle'].includes(v.kind)) return { count, minutes: null, label: v.label };
+    return { count, minutes: !count && v.free ? 0 : round5((count + 0.5) * AVG()) };
+  }
+
   // 查某一號：前面還有幾位、大約幾分鐘
   function ticketInfo(cfg, state, number, now = taipeiNow()) {
     const t = (state.tickets || []).find((x) => x.number === number);
@@ -131,6 +140,6 @@
 
   window.QC = Object.assign(window.QC || {}, {
     taipeiNow, toMin, pad3, addDays, weekday, shortDate, isOff, shopStatus, designerView, freeDesigners,
-    waitInfo, waitText, agoText, esc, waitingTickets, activeDesigners, estimateWait, ticketInfo,
+    waitInfo, waitText, agoText, esc, waitingTickets, activeDesigners, estimateWait, designerWait, ticketInfo,
   });
 })();

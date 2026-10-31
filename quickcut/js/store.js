@@ -4,6 +4,7 @@
  *   store.load()                       → 目前狀態
  *   store.subscribe(onChange, onConn)  → 狀態變動時通知
  *   store.staff(pin, designer, action, number)
+ *   store.fix(pin, action, number)     號碼調整：set_number / set_issued / recall_ticket（店內密碼）
  *   store.owner(pin, action, { designer, day, number, newPin })
  * 叫號規則以 supabase/setup.sql 為準，示範模式照抄同一套規則。
  */
@@ -113,6 +114,8 @@
       logView,
       staff: (pin, designer, action, number = null) =>
         rpc('staff_action', { p_shop: shopId, p_pin: pin, p_designer: designer, p_action: action, p_number: number }),
+      fix: (pin, action, number) =>
+        rpc('staff_fix', { p_shop: shopId, p_pin: pin, p_action: action, p_number: number }),
       owner: (pin, action, a = {}) =>
         rpc('owner_action', {
           p_shop: shopId, p_pin: pin, p_action: action, p_designer: a.designer ?? null,
@@ -363,6 +366,40 @@
       return fail(`不認識的操作：${action}`);
     }
 
+    async function fix(pin, action, number) {
+      const db = read();
+      if (pin !== db.pins.staff && pin !== db.pins.owner) return fail('密碼錯誤');
+      rollDay(db);
+      const s = db.shop;
+      const maxN = cfg.maxNumber || 999;
+      if (action === 'set_number') {
+        if (!(number >= 0 && number <= maxN)) return fail(`請輸入 0～${maxN} 的號碼`);
+        s.last_called = number; write(db);
+        return ok(`目前叫號改為 ${fmt(number)}`);
+      }
+      if (action === 'set_issued') {
+        if (!(number >= 0 && number <= maxN)) return fail(`請輸入 0～${maxN} 的號碼`);
+        if (number > s.last_issued) {
+          const added = fillTo(db, number);
+          write(db);
+          return ok(`已補到 ${fmt(number)} 號（新增 ${added} 號）`);
+        }
+        if (number === s.last_issued) return ok(`已經是 ${fmt(number)} 號，不用改`);
+        s.last_issued = number; write(db);
+        return ok(`已發號碼改為 ${fmt(number)}`);
+      }
+      if (action === 'recall_ticket') {
+        if (!(number >= 1 && number <= maxN)) return fail(`請輸入 1～${maxN} 的號碼`);
+        const t = ticket(db, number);
+        if (!t) return fail(`${fmt(number)} 號今天不存在`);
+        if (t.status === 'waiting' || t.status === 'serving') return fail(`${fmt(number)} 號目前就在等候或服務中，不用叫回`);
+        Object.assign(t, { status: 'waiting', served_by: null, called_at: null, finished_at: null, sort_key: null });
+        write(db);
+        return ok(`${fmt(number)} 號已叫回，重新排進等候名單`);
+      }
+      return fail(`不認識的操作：${action}`);
+    }
+
     async function owner(pin, action, a = {}) {
       const db = read();
       if (pin !== db.pins.owner) return fail('密碼錯誤');
@@ -377,12 +414,6 @@
       if (action === 'day_on') {
         db.days_off = db.days_off.filter((o) => !(o.designer_id === a.designer && o.day === a.day));
         write(db); return ok('已取消休假');
-      }
-      if (action === 'set_number') {
-        const maxN = cfg.maxNumber || 999;
-        if (!(a.number >= 0 && a.number <= maxN)) return fail(`請輸入 0～${maxN} 的號碼`);
-        db.shop.last_called = a.number; write(db);
-        return ok(`目前叫號改為 ${fmt(a.number)}`);
       }
       if (action === 'reset_today') {
         const keepPins = db.pins, keepOff = db.days_off;
@@ -439,6 +470,7 @@
         return () => listeners.delete(onChange);
       },
       staff,
+      fix,
       owner,
       demoReset,
       demoSeed,

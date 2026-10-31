@@ -55,6 +55,9 @@
     <main class="wrap">
       <div class="dgrid" id="dgrid" aria-label="設計師：按一下叫下一號"></div>
 
+      <h2 class="section-title">各設計師等候</h2>
+      <div class="card wstats" id="wstats"></div>
+
       <h2 class="section-title">等候名單 <small id="queueCount"></small></h2>
       <div class="panel queue-panel">
         <div class="queue" id="queue"></div>
@@ -62,11 +65,23 @@
           <p class="skipped-title">過號（回來要再等 <span id="skipAfter">3</span> 位）</p>
           <div class="queue" id="skipped"></div>
         </div>
-        <form class="inline sync" id="syncForm">
-          <input class="field" id="syncInput" type="number" inputmode="numeric" min="1" max="999" placeholder="機器發到幾號" aria-label="抽號機目前發到幾號" />
-          <button class="btn" type="submit">補號</button>
-        </form>
         <button class="btn wide undo-issue" id="btnUndoIssue">取消最後加的一號</button>
+      </div>
+
+      <h2 class="section-title">號碼調整</h2>
+      <div class="card numfix">
+        <button class="row btn-row" data-fix="set_number">
+          <div class="row-main"><div class="row-value">目前叫到</div></div><b class="num numfix-val" id="fixCalled">---</b><span class="row-go">›</span>
+        </button>
+        <button class="row btn-row" data-fix="set_issued">
+          <div class="row-main"><div class="row-value">抽號機發到</div></div><b class="num numfix-val" id="fixIssued">---</b><span class="row-go">›</span>
+        </button>
+        <button class="row btn-row" data-fix="recall_ticket">
+          <div class="row-main"><div class="row-value">叫回號碼</div><div class="row-label">取消或剪完的號碼，放回等候名單</div></div><span class="row-go">›</span>
+        </button>
+        <button class="row btn-row" id="btnReset">
+          <div class="row-main"><div class="row-value" style="color:var(--danger)">今日歸零</div><div class="row-label">要店長密碼</div></div><span class="row-go">›</span>
+        </button>
       </div>
 
       <h2 class="section-title">其他</h2>
@@ -75,7 +90,7 @@
           <div class="row-main"><div class="row-value">查看客人看到的畫面</div></div><span class="row-go">›</span>
         </a>
         <button class="row btn-row" id="btnOwner" style="width:100%;border:0;background:none;text-align:left">
-          <div class="row-main"><div class="row-value">店長設定（排休、歸零、密碼、QR Code）</div></div><span class="row-go">›</span>
+          <div class="row-main"><div class="row-value">店長設定（排休、密碼、QR Code）</div></div><span class="row-go">›</span>
         </button>
         <button class="row btn-row" id="btnLogout" style="width:100%;border:0;background:none;text-align:left">
           <div class="row-main"><div class="row-value" style="color:var(--danger)">登出這支手機</div></div>
@@ -142,39 +157,6 @@
       </div>
 
       <div class="panel">
-        <h3>修改目前叫號</h3>
-        <p class="hint">跟店裡抽號機對不上時使用。下一位會從這個號碼 +1 開始。</p>
-        <form class="inline" id="setNumForm">
-          <input class="field" id="setNumInput" type="number" inputmode="numeric" min="0" max="999" placeholder="例：23" />
-          <button class="btn primary" type="submit">更新</button>
-        </form>
-      </div>
-
-      <div class="panel">
-        <h3>修改已發號碼</h3>
-        <p class="hint">發號發錯、發太多的時候用。改小之後，多發的號碼牌還是會留在等候名單上，但下次真的發到那個號碼時會自動蓋掉重發，不用擔心撞號。</p>
-        <form class="inline" id="setIssuedForm">
-          <input class="field" id="setIssuedInput" type="number" inputmode="numeric" min="0" max="999" placeholder="例：20" />
-          <button class="btn primary" type="submit">更新</button>
-        </form>
-      </div>
-
-      <div class="panel">
-        <h3>叫回號碼</h3>
-        <p class="hint">單獨一張號碼牌被取消、標記完成，想把那一張叫回等候名單時用。輸入號碼，原本指定的設計師會保留。</p>
-        <form class="inline" id="recallForm">
-          <input class="field" id="recallInput" type="number" inputmode="numeric" min="1" max="999" placeholder="例：15" />
-          <button class="btn primary" type="submit">叫回</button>
-        </form>
-      </div>
-
-      <div class="panel">
-        <h3>今日歸零</h3>
-        <p class="hint">每天第一次叫號時會自動從 001 開始，一般不需要手動歸零。</p>
-        <button class="btn danger wide" id="btnReset">現在歸零</button>
-      </div>
-
-      <div class="panel">
         <h3>客人頁 QR Code</h3>
         <p class="hint">印出來貼在店門口、抽號機旁邊。</p>
         <div class="qr" id="qr"></div>
@@ -205,6 +187,19 @@
       <div class="dialog-actions">
         <button class="btn" value="cancel" type="button" id="callCancel">取消</button>
         <button class="btn primary" value="ok">叫號</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 號碼調整：輸入一個號碼 -->
+  <dialog id="numDialog">
+    <form method="dialog" id="numForm">
+      <h2 id="numTitle"></h2>
+      <p class="hint" id="numHint"></p>
+      <input class="field numfix-input" id="numInput" type="number" inputmode="numeric" min="0" max="999" />
+      <div class="dialog-actions">
+        <button class="btn" type="button" id="numCancel">取消</button>
+        <button class="btn primary" value="ok">確定</button>
       </div>
     </form>
   </dialog>
