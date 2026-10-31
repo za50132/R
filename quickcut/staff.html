@@ -158,7 +158,6 @@
     <main class="wrap">
       <div class="panel">
         <h3>設計師排休</h3>
-        <p class="hint">先選設計師，再點日期：點一下設為休假，再點一下取消。</p>
         <div class="chips" id="offChips"></div>
         <div class="cal-head">
           <button class="btn" id="calPrev" aria-label="上個月">‹</button>
@@ -170,7 +169,6 @@
 
       <div class="panel">
         <h3>每位客人大約剪多久</h3>
-        <p class="hint">用來估算客人要等多久。前面每多一位客人，等候時間就多這麼久（有幾位設計師同時在剪會再分攤）。</p>
         <div class="avg-row">
           <select class="field" id="avgCut" aria-label="每位客人幾分鐘"></select><span>分鐘</span>
         </div>
@@ -178,13 +176,11 @@
 
       <div class="panel">
         <h3>上班時間</h3>
-        <p class="hint">每天固定的上下班時間，改了馬上生效。臨時加班或提早走，在叫號頁長按名字按「上班／下班」就好。</p>
         <div class="shift-list" id="shifts"></div>
       </div>
 
       <div class="panel">
         <h3>客人頁 QR Code</h3>
-        <p class="hint">印出來貼在店門口、抽號機旁邊。</p>
         <div class="qr" id="qr"></div>
         <div class="code" id="customerUrl"></div>
         <button class="btn wide" id="btnCopyUrl">複製網址</button>
@@ -192,7 +188,6 @@
 
       <div class="panel">
         <h3>修改密碼</h3>
-        <p class="hint">6～12 位數字。改了店內密碼之後，每位設計師的手機都要重新輸入。</p>
         <form class="inline" id="staffPinForm" style="margin-bottom:10px">
           <input class="field" id="newStaffPin" type="password" inputmode="numeric" placeholder="新的店內密碼" />
           <button class="btn primary" type="submit">更新</button>
