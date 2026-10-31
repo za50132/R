@@ -58,12 +58,17 @@
       <h2 class="section-title">各設計師等候</h2>
       <div class="card wstats" id="wstats"></div>
 
-      <h2 class="section-title">等候名單 <small id="queueCount"></small></h2>
+      <h2 class="section-title qtitle">等候名單 <small id="queueCount"></small><button class="multi-btn" id="btnMulti" type="button">多選</button></h2>
       <div class="panel queue-panel">
         <div class="queue" id="queue"></div>
         <div class="skipped" id="skippedWrap" hidden>
           <p class="skipped-title">過號（回來要再等 <span id="skipAfter">3</span> 位）</p>
           <div class="queue" id="skipped"></div>
+        </div>
+        <div class="batchbar" id="batchBar" hidden>
+          <span id="batchCount">點號碼勾選</span>
+          <button class="btn" type="button" id="batchAssign" disabled>指派</button>
+          <button class="btn danger" type="button" id="batchCancel" disabled>取消這些號</button>
         </div>
         <button class="btn wide undo-issue" id="btnUndoIssue">取消最後加的一號</button>
       </div>
@@ -110,6 +115,13 @@
     <h2 id="pickTitle">加號：指定哪位設計師？</h2>
     <div class="pick-grid" id="pickGrid"></div>
     <button class="btn wide" type="button" id="pickCancel" style="margin-top:12px">取消</button>
+  </dialog>
+
+  <!-- 多選：一次指派 -->
+  <dialog id="batchDialog" class="sheet">
+    <h2 id="batchTitle"></h2>
+    <div class="pick-grid" id="batchGrid"></div>
+    <button class="btn wide" type="button" id="batchClose" style="margin-top:12px">關閉</button>
   </dialog>
 
   <!-- 長按設計師：更多操作 -->

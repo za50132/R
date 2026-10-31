@@ -107,6 +107,13 @@
       </button>`;
     }).join('');
 
+    // 多選：已經不在名單上的號碼（被叫走、取消）自動取消勾選
+    for (const n of [...picked]) {
+      const t = (state.tickets || []).find((x) => x.number === n);
+      if (!t || !['waiting', 'skipped'].includes(t.status)) picked.delete(n);
+    }
+    renderBatch();
+
     // 各設計師等候：指定（含指派）他的人數＋現在指定他大約要等多久；最後一列是不指定
     const eta = (m) => (m == null ? '' : waitText(m));
     const open = waitingAll.filter((t) => !t.designer).length;
@@ -130,7 +137,7 @@
       const who = t.designer ? designer(t.designer) : null;
       const cls = !who ? 'open' : t.assigned ? 'dispatched' : 'assigned';
       const label = !who ? '不指定' : `${t.assigned ? '指派' : '指定'} ${esc(who.name)}`;
-      return `<button class="qchip ${cls}" data-num="${t.number}">
+      return `<button class="qchip ${cls} ${picked.has(t.number) ? 'sel' : ''}" data-num="${t.number}">
         <b class="num">${pad3(t.number)}</b><small>${label}</small></button>`;
     }).join('') : '<p class="empty">目前沒有人在等</p>';
     // 過號：橘色另外列出來，客人回來時點一下
@@ -138,7 +145,7 @@
     $('skippedWrap').hidden = !skipped.length;
     $('skipped').innerHTML = skipped.map((t) => {
       const who = t.designer ? designer(t.designer) : null;
-      return `<button class="qchip skip" data-num="${t.number}"><b class="num">${pad3(t.number)}</b><small>過號${who ? `・${esc(who.name)}` : ''}</small></button>`;
+      return `<button class="qchip skip ${picked.has(t.number) ? 'sel' : ''}" data-num="${t.number}"><b class="num">${pad3(t.number)}</b><small>過號${who ? `・${esc(who.name)}` : ''}</small></button>`;
     }).join('');
     const last = (state.tickets || []).find((t) => t.number === state.lastIssued);
     $('btnUndoIssue').hidden = !(last && last.status === 'waiting');
@@ -296,8 +303,73 @@
     if (!isSkipped) $('assignGrid').innerHTML = pickButtons(t ? t.designer : null, true);
     $('ticketDialog').showModal();
   }
-  $('queue').addEventListener('click', openTicket);
-  $('skipped').addEventListener('click', openTicket);
+  $('queue').addEventListener('click', onChip);
+  $('skipped').addEventListener('click', onChip);
+  function onChip(e) {
+    if (!multi) { openTicket(e); return; }
+    const b = e.target.closest('[data-num]');
+    if (!b) return;
+    const n = Number(b.dataset.num);
+    if (picked.has(n)) picked.delete(n); else picked.add(n);
+    b.classList.toggle('sel', picked.has(n));
+    renderBatch();
+  }
+
+  // ---------- 多選：勾好幾號，一次指派或取消 ----------
+  let multi = false;
+  const picked = new Set();
+  function renderBatch() {
+    $('btnMulti').textContent = multi ? '完成' : '多選';
+    $('batchBar').hidden = !multi;
+    $('batchCount').textContent = picked.size ? `已選 ${picked.size} 號` : '點號碼勾選';
+    $('batchAssign').disabled = $('batchCancel').disabled = !picked.size;
+  }
+  $('btnMulti').addEventListener('click', () => {
+    multi = !multi;
+    picked.clear();
+    renderMain();
+  });
+  // 依排隊順序一號一號送；結果合成一則提示
+  async function runBatch(list, doneMsg) {
+    const fails = [];
+    for (const [action, n, who] of list) {
+      const r = await store.staff(session.pin, who, action, n);
+      if (!r.ok) fails.push(`${pad3(n)}：${r.message}`);
+      if (r.message === '密碼錯誤') { session = {}; saveSession(); startLogin(); return; }
+    }
+    buzz();
+    toast(fails.length ? `${list.length - fails.length} 號完成；${fails.join('、')}` : doneMsg, fails.length > 0);
+    multi = false;
+    picked.clear();
+    renderMain();
+  }
+  const pickedTickets = () => (state.tickets || []).filter((t) => picked.has(t.number));
+  $('batchAssign').addEventListener('click', () => {
+    $('batchTitle').textContent = `${[...picked].sort((a, b) => a - b).map(pad3).join('、')} 號指派給：`;
+    $('batchGrid').innerHTML = pickButtons(undefined, true);
+    $('batchDialog').showModal();
+  });
+  $('batchClose').addEventListener('click', () => $('batchDialog').close());
+  $('batchGrid').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-id]');
+    if (!b) return;
+    $('batchDialog').close();
+    const who = b.dataset.id || null;
+    // 一次指派只動不指定（或已指派）的號碼：客人自己指定的、過號的都跳過，
+    // 要改客人指定的設計師，請單獨點那一號
+    const all = pickedTickets();
+    const ok = all.filter((t) => t.status === 'waiting' && !(t.designer && !t.assigned));
+    const skippedNote = all.length > ok.length ? `（${all.length - ok.length} 號是客人指定或過號，沒有改）` : '';
+    if (!ok.length) { toast(`選的號碼都是客人指定或過號，沒有改`, true); return; }
+    const name = who ? designer(who).name : '不指定';
+    runBatch(ok.map((t) => ['dispatch', t.number, who]),
+      (who ? `${ok.length} 號已指派給 ${name}` : `${ok.length} 號改回不指定`) + skippedNote);
+  });
+  $('batchCancel').addEventListener('click', async () => {
+    const nums = [...picked].sort((a, b) => a - b);
+    if (!await ask(`取消 ${nums.map(pad3).join('、')} 號？`, '取消這些號')) return;
+    runBatch(nums.map((n) => ['cancel_ticket', n, null]), `已取消 ${nums.length} 號`);
+  });
   $('ticketRejoin').addEventListener('click', () => { $('ticketDialog').close(); issueAct('rejoin', pickedTicket); });
   $('assignGrid').addEventListener('click', (e) => {
     const b = e.target.closest('[data-id]');
