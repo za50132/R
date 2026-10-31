@@ -95,7 +95,8 @@
   const agoText = (m) => (m < 1 ? '剛剛更新' : m < 60 ? `${m} 分鐘前更新` : `${Math.floor(m / 60)} 小時前更新`);
 
   // ===== 排隊 =====
-  const AVG = () => (window.QC_CONFIG && window.QC_CONFIG.avgCutMinutes) || 12;
+  // 每位客人平均幾分鐘：店長在店長設定改過就用那個，沒改過照 config.js
+  const AVG = (state) => (state && state.avgCutMinutes) || (window.QC_CONFIG && window.QC_CONFIG.avgCutMinutes) || 12;
   const waitingTickets = (state, who) =>
     (state.tickets || []).filter((t) => t.status === 'waiting' && (who === undefined || t.designer === who));
 
@@ -112,7 +113,7 @@
     const ahead = waitingTickets(state).length;
     if (!ahead && freeDesigners(cfg, state, now) > 0) return 0;
     // 大家都在剪：平均還要再等半個人的時間才會空出一位
-    return round5(((ahead + 0.5) * AVG()) / active.length);
+    return round5(((ahead + 0.5) * AVG(state)) / active.length);
   }
 
   // 某位設計師：指定（含指派）他的有幾位在等、現在指定他大約要等幾分鐘
@@ -121,7 +122,7 @@
     const count = waitingTickets(state, d.id).length;
     const v = designerView(d, state, now);
     if (!['cutting', 'idle'].includes(v.kind)) return { count, minutes: null, label: v.label };
-    return { count, minutes: !count && v.free ? 0 : round5((count + 0.5) * AVG()) };
+    return { count, minutes: !count && v.free ? 0 : round5((count + 0.5) * AVG(state)) };
   }
 
   // 查某一號：前面還有幾位、大約幾分鐘
@@ -135,10 +136,10 @@
       // state.tickets 已依排隊順序排好（過號回來的會排在後面）
       const ahead = waitingTickets(state, t.designer).findIndex((x) => x.number === number);
       const on = active.some((d) => d.id === t.designer);
-      return { kind: 'waiting', ahead, designer: t.designer, assigned: t.assigned, minutes: on ? round5((ahead + 0.5) * AVG()) : null };
+      return { kind: 'waiting', ahead, designer: t.designer, assigned: t.assigned, minutes: on ? round5((ahead + 0.5) * AVG(state)) : null };
     }
     const ahead = waitingTickets(state).findIndex((x) => x.number === number);
-    return { kind: 'waiting', ahead, minutes: active.length ? round5(((ahead + 0.5) * AVG()) / active.length) : null };
+    return { kind: 'waiting', ahead, minutes: active.length ? round5(((ahead + 0.5) * AVG(state)) / active.length) : null };
   }
 
   function esc(s) {

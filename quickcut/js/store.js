@@ -7,6 +7,7 @@
  *   store.fix(pin, action, number)     號碼調整：set_number / set_issued / recall_ticket（店內密碼）
  *   store.owner(pin, action, { designer, day, number, newPin })
  *   store.shift(pin, designer, start, end)   店長設定上下班時間（'HH:MM'）
+ *   store.avgCut(pin, minutes)               店長設定每位客人平均幾分鐘
  * 叫號規則以 supabase/setup.sql 為準，示範模式照抄同一套規則。
  */
 (function () {
@@ -32,6 +33,7 @@
       lastIssued: fresh ? 0 : raw.last_issued || 0,
       waitMinutes: fresh ? null : raw.wait_minutes ?? null,
       waitSetAt: fresh || !raw.wait_set_at ? null : Date.parse(raw.wait_set_at),
+      avgCutMinutes: raw.avg_cut_minutes || null,   // 店長設定，換日不歸零
       designers,
       // 依排隊順序排好：一般照號碼，過號回來的客人插在後面 3 位之後
       tickets: fresh ? [] : (raw.tickets || [])
@@ -53,7 +55,7 @@
     async function load() {
       const from = taipeiNow().date;
       const [s, d, o, t] = await Promise.all([
-        client.from('shops').select('day,last_called,last_issued,wait_minutes,wait_set_at').eq('id', shopId).single(),
+        client.from('shops').select('day,last_called,last_issued,wait_minutes,wait_set_at,avg_cut_minutes').eq('id', shopId).single(),
         client.from('designers').select('id,status,current_number,called_at,shift_state,shift_start,shift_end').eq('shop_id', shopId),
         client.from('days_off').select('designer_id,day').eq('shop_id', shopId)
           .gte('day', from).lte('day', QC.addDays(from, 200)),
@@ -117,6 +119,8 @@
       logView,
       staff: (pin, designer, action, number = null) =>
         rpc('staff_action', { p_shop: shopId, p_pin: pin, p_designer: designer, p_action: action, p_number: number }),
+      avgCut: (pin, minutes) =>
+        rpc('owner_avg_cut', { p_shop: shopId, p_pin: pin, p_minutes: minutes }),
       shift: (pin, designer, start, end) =>
         rpc('owner_shift', { p_shop: shopId, p_pin: pin, p_designer: designer, p_start: start, p_end: end }),
       fix: (pin, action, number) =>
@@ -172,7 +176,7 @@
     function rollDay(db) {
       const today = taipeiNow().date;
       if (db.shop.day !== today) {
-        db.shop = { day: today, last_called: 0, last_issued: 0, wait_minutes: null, wait_set_at: null };
+        db.shop = { day: today, last_called: 0, last_issued: 0, wait_minutes: null, wait_set_at: null, avg_cut_minutes: db.shop.avg_cut_minutes };
         db.tickets = [];
         for (const d of Object.values(db.designers)) { d.current_number = null; d.called_at = null; d.status = 'working'; }
       }
@@ -405,6 +409,15 @@
       return fail(`不認識的操作：${action}`);
     }
 
+    async function avgCut(pin, minutes) {
+      const db = read();
+      if (pin !== db.pins.owner) return fail('密碼錯誤');
+      if (!(minutes >= 3 && minutes <= 60)) return fail('請輸入 3～60 分鐘');
+      db.shop.avg_cut_minutes = minutes;
+      write(db);
+      return ok(`每位客人改為 ${minutes} 分鐘`);
+    }
+
     async function shift(pin, designer, start, end) {
       const db = read();
       if (pin !== db.pins.owner) return fail('密碼錯誤');
@@ -434,9 +447,14 @@
         write(db); return ok('已取消休假');
       }
       if (action === 'reset_today') {
-        const keepPins = db.pins, keepOff = db.days_off;
+        // 歸零只清今天的號碼；密碼、排休、上班時間、平均時間都留著
         const fresh = blank();
-        fresh.pins = keepPins; fresh.days_off = keepOff;
+        fresh.pins = db.pins; fresh.days_off = db.days_off;
+        fresh.shop.avg_cut_minutes = db.shop.avg_cut_minutes;
+        for (const [id, d] of Object.entries(fresh.designers)) {
+          const old = db.designers[id] || {};
+          Object.assign(d, { shift_start: old.shift_start, shift_end: old.shift_end });
+        }
         write(fresh); return ok('已歸零，下一位從 001 開始');
       }
       if (action === 'set_staff_pin' || action === 'set_owner_pin') {
@@ -490,6 +508,7 @@
       staff,
       fix,
       shift,
+      avgCut,
       owner,
       demoReset,
       demoSeed,

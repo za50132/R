@@ -355,6 +355,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .wrow.dim { color: var(--muted); }
 .wrow.dim .wrow-eta { color: var(--muted); }
 
+/* 店長設定：每位客人幾分鐘 */
+.avg-row { display: flex; align-items: center; gap: 10px; }
+.avg-row .field { width: 7em; padding: 10px 6px; font-size: 20px; letter-spacing: 0; text-align-last: center; appearance: none; -webkit-appearance: none; }
+.avg-row span { color: var(--ink-soft); }
+
 /* 店長設定：上班時間，一位設計師一列 */
 .shift-row { display: grid; grid-template-columns: 4em 1fr auto 1fr; align-items: center; gap: 8px; padding: 8px 0; }
 .shift-row b { font-size: 16px; }

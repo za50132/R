@@ -95,7 +95,7 @@
           <div class="row-main"><div class="row-value">查看客人看到的畫面</div></div><span class="row-go">›</span>
         </a>
         <button class="row btn-row" id="btnOwner" style="width:100%;border:0;background:none;text-align:left">
-          <div class="row-main"><div class="row-value">店長設定（排休、上班時間、密碼、QR Code）</div></div><span class="row-go">›</span>
+          <div class="row-main"><div class="row-value">店長設定（排休、等候時間、上班時間、密碼）</div></div><span class="row-go">›</span>
         </button>
         <button class="row btn-row" id="btnLogout" style="width:100%;border:0;background:none;text-align:left">
           <div class="row-main"><div class="row-value" style="color:var(--danger)">登出這支手機</div></div>
@@ -166,6 +166,14 @@
           <button class="btn" id="calNext" aria-label="下個月">›</button>
         </div>
         <div class="cal" id="cal"></div>
+      </div>
+
+      <div class="panel">
+        <h3>每位客人大約剪多久</h3>
+        <p class="hint">用來估算客人要等多久。前面每多一位客人，等候時間就多這麼久（有幾位設計師同時在剪會再分攤）。</p>
+        <div class="avg-row">
+          <select class="field" id="avgCut" aria-label="每位客人幾分鐘"></select><span>分鐘</span>
+        </div>
       </div>
 
       <div class="panel">

@@ -50,6 +50,10 @@ alter table public.designers add column if not exists shift_state text not null 
 -- 最後叫號時間：用來判斷設計師是否空檔中（「現在人少」提示）
 alter table public.designers add column if not exists called_at timestamptz;
 
+-- 每位客人平均剪幾分鐘：用來估算等候時間。店長在店長設定改；留空 = 照 config.js 的 avgCutMinutes
+alter table public.shops add column if not exists avg_cut_minutes int
+  check (avg_cut_minutes between 3 and 60);
+
 -- 每天的上下班時間（'HH:MM'），店長在店長設定裡改；留空 = 照 config.js 的班表
 alter table public.designers add column if not exists shift_start text
   check (shift_start ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
@@ -647,6 +651,24 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- 店長設定每位客人平均剪幾分鐘（估算等候時間用）
+-- ---------------------------------------------------------------------
+create or replace function public.owner_avg_cut(p_shop text, p_pin text, p_minutes int)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare
+  err text;
+begin
+  err := qc_check_pin(p_shop, p_pin, true);
+  if err is not null then return json_build_object('ok', false, 'message', err); end if;
+  if p_minutes is null or p_minutes < 3 or p_minutes > 60 then
+    return json_build_object('ok', false, 'message', '請輸入 3～60 分鐘');
+  end if;
+  update shops set avg_cut_minutes = p_minutes, updated_at = now() where id = p_shop;
+  return json_build_object('ok', true, 'message', '每位客人改為 ' || p_minutes || ' 分鐘');
+end $$;
+
+-- ---------------------------------------------------------------------
 -- 店長操作
 --   p_action: ping / day_off / day_on / reset_today / set_staff_pin / set_owner_pin
 --             set_number / set_issued / recall_ticket 同 staff_fix（見 qc_fix_number）
@@ -777,6 +799,7 @@ grant  execute on function public.staff_action(text, text, text, text, int) to a
 grant  execute on function public.owner_action(text, text, text, text, date, int, text) to anon, authenticated;
 grant  execute on function public.staff_fix(text, text, text, int) to anon, authenticated;
 grant  execute on function public.owner_shift(text, text, text, text, text) to anon, authenticated;
+grant  execute on function public.owner_avg_cut(text, text, int) to anon, authenticated;
 grant  execute on function public.crowd_stats(text) to anon, authenticated;
 grant  execute on function public.log_view(text, text, text, text) to anon, authenticated;
 

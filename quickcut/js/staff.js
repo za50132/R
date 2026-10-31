@@ -510,6 +510,20 @@
       `${name} ${Number(day.slice(5, 7))}/${Number(day.slice(8))} ${isOff ? '取消休假' : '休假'}`);
   });
 
+  // 每位客人平均幾分鐘：3～60，常用的 5～30 每分鐘一格
+  const AVG_OPTIONS = [...Array.from({ length: 26 }, (_, i) => i + 5), 35, 40, 45, 50, 60];
+  function renderAvg() {
+    if (!state) return;
+    const cur = state.avgCutMinutes || cfg.avgCutMinutes || 12;
+    const opts = AVG_OPTIONS.includes(cur) ? AVG_OPTIONS : [...AVG_OPTIONS, cur].sort((a, b) => a - b);
+    $('avgCut').innerHTML = opts.map((m) => `<option value="${m}" ${m === cur ? 'selected' : ''}>${m}</option>`).join('');
+  }
+  $('avgCut').addEventListener('change', async (e) => {
+    const r = await store.avgCut(ownerPin, Number(e.target.value));
+    toast(r.message, !r.ok);
+    if (!r.ok) renderAvg();
+  });
+
   // 上班時間：每半小時一格的下拉選單（手機原生的時間欄位在窄螢幕會被切掉上午／下午）。
   // 改了任一格就存，存失敗就把畫面恢復成原本的時間
   const HALF_HOURS = Array.from({ length: 36 }, (_, i) => {
@@ -578,6 +592,7 @@
     renderOffChips();
     renderCal();
     renderShifts();
+    renderAvg();
     qrTries = 0;
     renderQr();
   }
@@ -590,6 +605,7 @@
       renderCal();
       // 正在改的時間格不要被別支手機的更新蓋掉
       if (!$('shifts').contains(document.activeElement)) renderShifts();
+      if (document.activeElement !== $('avgCut')) renderAvg();
     }
   }
   store.load().then(onState).catch(() => toast('連線失敗，請檢查網路', true));

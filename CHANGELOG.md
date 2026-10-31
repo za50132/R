@@ -9,6 +9,7 @@
 - 資料庫新增 `staff_fix`（店內密碼）與共用的 `qc_fix_number`；`owner_action` 改呼叫同一套
 - 店長設定新增「上班時間」：每位設計師每天的上下班時間（半小時一格），存在 `designers.shift_start/shift_end`，新增 `owner_shift`
 - 叫號頁右上角拿掉「已發」，只留叫號和等候人數
+- 店長設定新增「每位客人大約剪多久」（3～60 分鐘），等候時間估算改用這個數字；存在 `shops.avg_cut_minutes`，新增 `owner_avg_cut`
 - 等候名單「多選」：勾好幾號一次指派或取消（只指派不指定的號碼，客人指定與過號跳過；不用改資料庫）
 - 資料庫變更集中在 `quickcut/supabase/2026-10-31_staff_fix.sql`，部署網頁前要先套用
 

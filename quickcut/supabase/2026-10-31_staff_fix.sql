@@ -1,6 +1,7 @@
 -- 2026-10-31：網頁部署前要先套用這段。只新增欄位和函式，不改、不刪任何資料；可以重複執行。
 --   1. 叫號頁的「號碼調整」（目前叫到、抽號機發到、叫回）用店內密碼就能做
 --   2. 店長設定可以改設計師每天的上下班時間
+--   3. 店長設定可以改每位客人平均剪幾分鐘（估算等候時間用）
 -- （setup.sql 裡的 owner_action 也改成呼叫 qc_fix_number，但結果相同，正式資料庫不用重套）
 
 -- ---------------------------------------------------------------------
@@ -118,3 +119,27 @@ begin
 end $$;
 
 grant  execute on function public.owner_shift(text, text, text, text, text) to anon, authenticated;
+
+-- ===== 3. 每位客人平均幾分鐘 =====
+alter table public.shops add column if not exists avg_cut_minutes int
+  check (avg_cut_minutes between 3 and 60);
+
+-- ---------------------------------------------------------------------
+-- 店長設定每位客人平均剪幾分鐘（估算等候時間用）
+-- ---------------------------------------------------------------------
+create or replace function public.owner_avg_cut(p_shop text, p_pin text, p_minutes int)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare
+  err text;
+begin
+  err := qc_check_pin(p_shop, p_pin, true);
+  if err is not null then return json_build_object('ok', false, 'message', err); end if;
+  if p_minutes is null or p_minutes < 3 or p_minutes > 60 then
+    return json_build_object('ok', false, 'message', '請輸入 3～60 分鐘');
+  end if;
+  update shops set avg_cut_minutes = p_minutes, updated_at = now() where id = p_shop;
+  return json_build_object('ok', true, 'message', '每位客人改為 ' || p_minutes || ' 分鐘');
+end $$;
+
+grant  execute on function public.owner_avg_cut(text, text, int) to anon, authenticated;
