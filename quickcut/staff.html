@@ -18,7 +18,6 @@
   <script>
     if (QC_CONFIG.supabaseUrl) document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
 </head>
 <body>
   <div class="demo-banner" id="demoBanner" hidden>示範模式・店內密碼 111111・店長密碼 999999</div>
@@ -177,13 +176,6 @@
       <div class="panel">
         <h3>上班時間</h3>
         <div class="shift-list" id="shifts"></div>
-      </div>
-
-      <div class="panel">
-        <h3>客人頁 QR Code</h3>
-        <div class="qr" id="qr"></div>
-        <div class="code" id="customerUrl"></div>
-        <button class="btn wide" id="btnCopyUrl">複製網址</button>
       </div>
 
       <div class="panel">

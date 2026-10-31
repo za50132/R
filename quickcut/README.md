@@ -78,7 +78,8 @@ supabaseKey: '剛剛複製的 publishable / anon key',
    - iPhone：Safari 分享 →「加入主畫面」，就會像 App 一樣
 2. 江江進「店長設定」：
    - **排休**：選設計師 → 點日期
-   - **QR Code**：截圖或列印，貼在店門口、抽號機旁邊
+   - **上班時間**、**每位客人大約剪多久**、**修改密碼**
+   - 店門口的 QR Code 用 `print/qingjin-qr-a4.pdf`（A4 海報，已帶 `?src=qr`）
 
 ---
 

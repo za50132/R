@@ -565,36 +565,12 @@
     if (r.ok) { $('newOwnerPin').value = ''; ownerPin = pin; }
   });
 
-  // QR Code
-  const customerUrl = new URL('./', location.href).href;
-  // QR Code 多帶 ?src=qr，才算得出有多少人是掃門口 QR Code 進來的
-  const qrUrl = `${customerUrl}?src=qr`;
-  $('customerUrl').textContent = customerUrl;
-  $('btnCopyUrl').addEventListener('click', () => {
-    navigator.clipboard?.writeText(customerUrl).then(() => toast('已複製網址'), () => toast('請長按網址手動複製', true));
-  });
-
-  let qrTries = 0;
-  function renderQr() {
-    if (!window.qrcode) {
-      $('qr').textContent = qrTries < 20 ? 'QR Code 載入中…' : 'QR Code 載入失敗，請檢查網路後重新整理';
-      if (qrTries++ < 20) setTimeout(renderQr, 500);
-      return;
-    }
-    const qr = window.qrcode(0, 'M');
-    qr.addData(qrUrl);
-    qr.make();
-    $('qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
-  }
-
   function enterOwner() {
     show('ownerView');
     renderOffChips();
     renderCal();
     renderShifts();
     renderAvg();
-    qrTries = 0;
-    renderQr();
   }
 
   // ---------- 資料同步 ----------
