@@ -497,5 +497,11 @@ dialog h2 { margin: 0 0 12px; font-size: 19px; }
 .toast.action { pointer-events: auto; padding-right: 10px; width: calc(100% - 32px); max-width: 480px; justify-content: space-between; text-align: left; }
 .toast-undo { flex: none; white-space: nowrap; border: 0; border-radius: 10px; background: #fff; color: var(--ink); font-weight: 900; font-size: 17px; padding: 8px 16px; }
 
-/* 頁尾：系統提供者 */
-.credit { text-align: center; font-size: 12px; color: var(--muted); letter-spacing: .08em; margin: 28px 0 8px; }
+/* 頁尾：Powered by 藍騎士（深藍膠囊標籤） */
+.credit { text-align: center; margin: 32px 0 8px; }
+.credit-badge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 11px; border: 1px solid rgba(30, 58, 110, .18);
+  border-radius: 999px; background: rgba(255, 255, 255, .7); color: #1e3a6e; line-height: 1; }
+.credit-mark { width: 13px; height: 15px; }
+.credit-by { font-size: 9.5px; letter-spacing: .22em; font-weight: 600; opacity: .6; }
+.credit-sep { width: 1px; height: 11px; background: currentColor; opacity: .25; }
+.credit-name { font-size: 13px; letter-spacing: .18em; font-weight: 700; }

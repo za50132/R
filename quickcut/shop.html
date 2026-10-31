@@ -92,7 +92,13 @@
     .row .go { color: var(--teal-dark); font-weight: 900; white-space: nowrap; font-size: 14px; }
 
     footer { padding: 28px 0 40px; text-align: center; font-size: 13px; color: var(--ink-soft); }
-    footer .credit { margin-top: 6px; font-size: 12px; opacity: .75; letter-spacing: .08em; }
+    footer .credit { margin-top: 18px; }
+    .credit-badge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 11px; border: 1px solid rgba(30, 58, 110, .18);
+      border-radius: 999px; background: rgba(255, 255, 255, .7); color: #1e3a6e; line-height: 1; }
+    .credit-mark { width: 13px; height: 15px; }
+    .credit-by { font-size: 9.5px; letter-spacing: .22em; font-weight: 600; opacity: .6; }
+    .credit-sep { width: 1px; height: 11px; background: currentColor; opacity: .25; }
+    .credit-name { font-size: 13px; letter-spacing: .18em; font-weight: 700; }
 
     @media (max-width: 720px) {
       .team { grid-template-columns: repeat(2, 1fr); }
@@ -243,7 +249,7 @@
 
   <footer>
     <div class="wrap">請進快剪 PLEASE COME IN・$120 佰二剪髮</div>
-    <div class="wrap credit">系統提供・藍騎士</div>
+    <div class="wrap credit"><span class="credit-badge"><svg class="credit-mark" viewBox="0 0 16 18" aria-hidden="true"><path d="M8 1 14.5 3.5V8.5C14.5 12.6 11.8 15.6 8 17 4.2 15.6 1.5 12.6 1.5 8.5V3.5Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M4.8 6.5 8 9.6 11.2 6.5M4.8 10 8 13.1 11.2 10" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="credit-by">POWERED BY</span><span class="credit-sep"></span><b class="credit-name">藍騎士</b></span></div>
   </footer>
 </body>
 </html>
