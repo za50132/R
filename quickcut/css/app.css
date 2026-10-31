@@ -504,4 +504,4 @@ dialog h2 { margin: 0 0 12px; font-size: 19px; }
 .credit-mark { width: 13px; height: 15px; }
 .credit-by { font-size: 9.5px; letter-spacing: .22em; font-weight: 600; opacity: .6; }
 .credit-sep { width: 1px; height: 11px; background: currentColor; opacity: .25; }
-.credit-name { font-size: 13px; letter-spacing: .18em; font-weight: 700; }
+.credit-name { font-size: 12px; letter-spacing: .2em; font-weight: 700; }
